@@ -12,7 +12,7 @@ import time
 import yaml
 import os.path
 
-from lib.harvester import GitHubHarvester
+from classes.harvester import GitHubHarvester
 
 def main():
 
