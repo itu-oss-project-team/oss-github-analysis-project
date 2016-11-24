@@ -36,21 +36,48 @@ class DatabaseService:
         stars = item["stargazers_count"]
         forks = item["forks"]
         watchers = item["watchers_count"]
-       # created_at = item["created_at"].encode('utf-8', 'ignore')
+        # TODO: Timeformat does not match, damn why?
+        #created_at = item["created_at"].encode('utf-8', 'ignore')
         #updated_at = item["updated_at"].encode('utf-8', 'ignore')
         created_at = None
         updated_at = None
         userURL = "https://api.github.com/users/" + item["owner"]["login"]
 
-
         self.__cursor.execute("""INSERT INTO `repositories` (`id`, `url`, `owner_id`, `name`, `full_name`, `description`,
-        `language`, `created_at`, `updated_at`, `stargazers_count`, `watchers_count`, `forks_count`, `html_url` )
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE name = name""",
-                       (id, url, owner_id, name, full_name, description, lang, created_at, updated_at, stars, watchers, forks,
-                        html_url))
+        `language`, `created_at`, `updated_at`, `stargazers_count`, `watchers_count`, `forks_count`)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE name = name""",
+                       (id, url, owner_id, name, full_name, description, lang, created_at, updated_at, stars, watchers, forks,))
 
         self.__db.commit()
 
-        print("Inserted project into DB:" + full_name)
+        print("Inserted project into DB:" + item["full_name"])
 
+
+    def insertUser(self, userData):
+
+        userId = userData["id"]
+        userLogin = userData["login"].encode('utf-8', 'ignore')
+        userName = userData["name"]
+        if userName is not None:
+         userName = userName.encode('utf-8', 'ignore')
+
+        userCompany = userData["company"]
+        if userCompany is not None:
+         userCompany = userCompany.encode('utf-8', 'ignore')
+
+        userEmail = userData["email"]
+        if userEmail is not None:
+         userEmail = userEmail.encode('utf-8', 'ignore')
+
+        userBio = userData["bio"]
+        if userBio is not None:
+         userBio = userBio.encode('utf-8', 'ignore')
+
+        userUrl = userData["url"]
+
+        self.__cursor.execute("""INSERT INTO users(id, login,name,company,email, bio, url) VALUES (%s,%s,%s,%s,%s,%s, %s)
+                 ON DUPLICATE KEY UPDATE login = login""",
+                 (userId, userLogin, userName, userCompany, userEmail, userBio, userUrl))
+
+        self.__db.commit()
 
