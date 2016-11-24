@@ -21,9 +21,7 @@ def main():
     with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config_secret.yaml'), 'r') as ymlfile:
         secret_config = yaml.load(ymlfile)
 
-    # Let's read projects from projects file
-    # TODO:
-    github_harvester = GitHubHarvester(secret_config['github-api']['tokens'])
+    github_harvester = GitHubHarvester(config, secret_config)
     # github_harvester.initDB()
     insertProject(github_harvester, secret_config)
 
