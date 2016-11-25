@@ -2,7 +2,7 @@
 
 
 import pymysql
-
+import dateutil.parser
 
 # A service class to make DB queries such as inserting new commits etc.
 class DatabaseService:
@@ -37,10 +37,10 @@ class DatabaseService:
         forks = item["forks"]
         watchers = item["watchers_count"]
         # TODO: Timeformat does not match, damn why?
-        #created_at = item["created_at"].encode('utf-8', 'ignore')
-        #updated_at = item["updated_at"].encode('utf-8', 'ignore')
-        created_at = None
-        updated_at = None
+        created_at = dateutil.parser.parse(item["created_at"])
+        updated_at = dateutil.parser.parse(item["updated_at"])
+        #created_at = None
+        #updated_at = None
         userURL = "https://api.github.com/users/" + item["owner"]["login"]
 
         self.__cursor.execute("""INSERT INTO `repositories` (`id`, `url`, `owner_id`, `name`, `full_name`, `description`,
