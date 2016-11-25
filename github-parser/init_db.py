@@ -49,7 +49,7 @@ CREATE TABLE commits (
     created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE INDEX sha (sha),
     CONSTRAINT commits_pk PRIMARY KEY (id)
-) ENGINE InnoDB CHARACTER SET utf8;
+) ENGINE InnoDB CHARACTER SET utf8mb4;
 
 CREATE INDEX committer_id ON commits (committer_id);
 
@@ -73,7 +73,7 @@ CREATE TABLE repositories (
     forks_count int NULL DEFAULT NULL,
     UNIQUE INDEX name (name,owner_id),
     CONSTRAINT projects_pk PRIMARY KEY (id)
-) ENGINE InnoDB CHARACTER SET utf8;
+) ENGINE InnoDB CHARACTER SET utf8mb4;
 
 CREATE INDEX owner_id ON repositories (owner_id);
 
@@ -87,7 +87,7 @@ CREATE TABLE users (
     email varchar(255) NULL DEFAULT NULL,
     bio text NULL DEFAULT NULL,
     CONSTRAINT id PRIMARY KEY (id)
-) CHARACTER SET utf8;
+) CHARACTER SET utf8mb4;
 
 -- foreign keys
 -- Reference: fk_commits_authors (table: commits)
@@ -101,7 +101,15 @@ ALTER TABLE commits ADD CONSTRAINT fk_commits_committers FOREIGN KEY fk_commits_
 -- Reference: fk_commits_repositories (table: commits)
 ALTER TABLE commits ADD CONSTRAINT fk_commits_repositories FOREIGN KEY fk_commits_repositories (project_id)
     REFERENCES repositories (id);
+
+-- Reference: fk_repositories_users (table: repositories)
+ALTER TABLE repositories ADD CONSTRAINT fk_repositories_users FOREIGN KEY fk_repositories_users (owner_id)
+    REFERENCES users (id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE;
     """)
+
+
 
     db.commit()
 
