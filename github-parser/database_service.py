@@ -37,8 +37,8 @@ class DatabaseService:
         forks = item["forks"]
         watchers = item["watchers_count"]
         # TODO: Timeformat does not match, damn why?
-        #created_at = item["created_at"].encode('utf-8', 'ignore')
-        #updated_at = item["updated_at"].encode('utf-8', 'ignore')
+        # created_at = item["created_at"].encode('utf-8', 'ignore')
+        # updated_at = item["updated_at"].encode('utf-8', 'ignore')
         created_at = None
         updated_at = None
         userURL = "https://api.github.com/users/" + item["owner"]["login"]
