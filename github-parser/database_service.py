@@ -3,7 +3,6 @@
 
 import pymysql
 import dateutil.parser
-
 # A service class to make DB queries such as inserting new commits etc.
 class DatabaseService:
 
@@ -11,11 +10,10 @@ class DatabaseService:
         # Generate a github_requester with imported GitHub tokens
 
         self.__db = pymysql.connect(host=mysql_config['host'], port=mysql_config['port'], db=mysql_config['db'],
-                             user=mysql_config['user'],
-                             passwd=mysql_config['passwd'])
+                             user=mysql_config['user'], passwd=mysql_config['passwd'],
+                             charset='utf8', use_unicode=True)
 
         self.__cursor = self.__db.cursor()
-
 
     def insertProject(self, item):
         id = item["id"]
@@ -81,3 +79,51 @@ class DatabaseService:
 
         self.__db.commit()
 
+    def getRepoUrls(self):
+        self.__cursor.execute("SELECT url, id FROM repositories")
+        self.__db.commit()
+
+        urls = self.__cursor.fetchall()
+        return urls
+
+    def insertCommit(self, commit, project_id):
+        sha = commit["sha"]
+        url = commit["url"]
+        author_id= commit["author"]["id"]
+        committer_id = commit["committer"]["id"]
+        message = commit["commit"]["message"]
+        created_at = dateutil.parser.parse(commit["commit"]["author"]["date"])
+        additions = commit["stats"]["additions"]
+        deletions = commit["stats"]["deletions"]
+        self.__cursor.execute(
+            """INSERT INTO `commits` (`sha`, `url`, `project_id`, `author_id`, `committer_id`, `message`,
+            `created_at`, `additions`, `deletions`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE url = url """,
+            (sha, url, project_id, author_id, committer_id, message, created_at, str(additions), str(deletions))
+        )
+        print("Commit with sha: " + sha +" added")
+        self.__db.commit()
+        self.insertFile(commit["files"], sha, project_id)
+        return
+
+    def insertFile(self, files, commit_sha, project_id):
+        for file in files:
+            sha = file["sha"]
+            filename = file["filename"]
+            status = file["status"]
+            additions = file["additions"]
+            deletions = file["deletions"]
+            changes = file["changes"]
+            contents_url = file["contents_url"]
+            if "patch" in file:
+                patch = file["patch"]
+            else:
+                patch = None
+
+            self.__cursor.execute(
+                """ INSERT INTO `filechanges` (`sha`, `project_id`, `commit_sha`, `filename`, `status`, `additions`, `deletions`, `changes`, `contents_url`, `patch`)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE filename = filename""",
+                (sha,project_id, commit_sha, filename, status, additions, deletions, changes, contents_url, patch)
+            )
+            self.__db.commit()
+
+        return

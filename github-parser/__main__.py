@@ -22,11 +22,11 @@ def main():
         secret_config = yaml.load(ymlfile)
 
     github_harvester = GitHubHarvester(config, secret_config)
-    # github_harvester.initDB()
     insertProject(github_harvester, secret_config)
 
 def insertProject(github_harvester, secret_config):
-    github_harvester.retrieveProjects()
+    #github_harvester.retrieveProjects()
+    github_harvester.retrieveCommits()
     return
 
 if __name__ == "__main__":
