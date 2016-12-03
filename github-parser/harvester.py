@@ -12,14 +12,15 @@ class GitHubHarvester:
         self.__requester = GitHubRequester(secret_config['github-api'])
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
-    def retrieveProjects(self):
+    def retrieveProjects(self, stars_count):
 
-        requestURL = "https://api.github.com/search/repositories?q=stars:>50000&page=1&per_page=100"
+        requestURL = "https://api.github.com/search/repositories?q=stars:>" + str(stars_count) + "&page=1&per_page=100"
         res = self.__requester.makeRequest(requestURL)
 
         if (res.status_code == 200): #API has responded with OK status
             returnJson = res.json()
-            if res.links is not None:
+            if res.links == "{}":
+                print(res.links)
                 indexStart = res.links["last"]["url"].find("page=")
                 indexEnd = res.links["last"]["url"].find("&per_page")
                 last = res.links["last"]["url"][indexStart+5:indexEnd]
@@ -28,8 +29,8 @@ class GitHubHarvester:
 
             for i in range(1, int(last)+1):
                 print(i)
-                requestURL = "https://api.github.com/search/repositories?q=stars:>50000&page=" + str(i) + "&per_page=100"
-                res = self.__requester.makeRequest(requestURL)
+                _requestURL = "https://api.github.com/search/repositories?q=stars:>" + str(stars_count) + "&page=" + str(i) + "&per_page=100"
+                res = self.__requester.makeRequest(_requestURL)
                 returnJson = res.json()
 
                 for project in returnJson["items"]:
@@ -38,13 +39,8 @@ class GitHubHarvester:
                     userLogin = project["owner"]["login"]
                     self.retrieveSingleUser(userLogin)
                     self.__databaseService.insertProject(project)
-                    # TODO: Fetch project contributors with https://api.github.com/repos/d3/d3/contributors
-                    #       Then fetch project commits with https://developer.github.com/v3/repos/commits/
-                    #       Remember that in order to obtain additions deletions GET /repos/:owner/:repo/commits/:sha
-                    #           must be initiated for every single commit (might be headache)
-
         else: # Request gave an error
-            print("Error while retriving: " + requestURL)
+            print("Error while retrieving: " + requestURL)
             print("Status code: "  + res.status_code)
 
         return
@@ -61,16 +57,15 @@ class GitHubHarvester:
 
         return
 
-    def retrieveCommits(self):
+    def retrieveCommits(self, since):
         urls = self.__databaseService.getRepoUrls()
         for repoURL, project_id in urls:
-            print(repoURL)
-            print(project_id)
-            requestURL = str(repoURL) + "/commits?since=2016-05-01T00:00:00Z&page=1&per_page=100"
+            print("Retriving commits from repoURL")
+            requestURL = str(repoURL) + "/commits?since=" + since + "&page=1&per_page=100"
             res = self.__requester.makeRequest(requestURL)
             if (res.status_code == 200): #API has responded with OK status
                 returnJson = res.json()
-                if res.links is not None:
+                if res.links == "{}":
                     indexStart = res.links["last"]["url"].find("page=")
                     indexEnd = res.links["last"]["url"].find("&per_page")
                     last = res.links["last"]["url"][indexStart+5:indexEnd]
@@ -79,15 +74,20 @@ class GitHubHarvester:
 
                 for i in range(1, int(last)+1):
                     print(i)
-                    requestURL = str(repoURL) + "/commits?since=2016-05-01T00:00:00Z&page=" + str(i) + "&per_page=100"
-                    res = self.__requester.makeRequest(requestURL)
+                    _requestURL = str(repoURL) + "/commits?since=" + since + "&page=" + str(i) + "&per_page=100"
+                    res = self.__requester.makeRequest(_requestURL)
                     returnJson = res.json()
 
                     for commit in returnJson:
-                        requestURL = str(repoURL) + "/commits/" + str(commit["sha"])
-                        res = self.__requester.makeRequest(requestURL)
+                        __requestURL = str(repoURL) + "/commits/" + str(commit["sha"])
+                        res = self.__requester.makeRequest(__requestURL)
                         commitDetail = res.json()
                         if commitDetail["author"]["login"] or commitDetail["committer"]["login"] is not None:
                             self.retrieveSingleUser(commitDetail["author"]["login"])
                             self.retrieveSingleUser(commitDetail["committer"]["login"])
                         self.__databaseService.insertCommit(commitDetail, project_id)
+
+            else: # Request gave an error
+                print("Error while retrieving: " + requestURL)
+                print("Status code: "  + res.status_code)
+

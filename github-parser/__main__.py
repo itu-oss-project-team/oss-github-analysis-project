@@ -25,8 +25,8 @@ def main():
     insertProject(github_harvester, secret_config)
 
 def insertProject(github_harvester, secret_config):
-    #github_harvester.retrieveProjects()
-    github_harvester.retrieveCommits()
+    github_harvester.retrieveProjects(50000)
+    github_harvester.retrieveCommits("2016-05-01T00:00:00Z")
     return
 
 if __name__ == "__main__":

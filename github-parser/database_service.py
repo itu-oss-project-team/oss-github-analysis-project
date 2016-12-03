@@ -34,11 +34,8 @@ class DatabaseService:
         stars = item["stargazers_count"]
         forks = item["forks"]
         watchers = item["watchers_count"]
-        # TODO: Timeformat does not match, damn why?
         created_at = dateutil.parser.parse(item["created_at"])
         updated_at = dateutil.parser.parse(item["updated_at"])
-        #created_at = None
-        #updated_at = None
         userURL = "https://api.github.com/users/" + item["owner"]["login"]
 
         self.__cursor.execute("""INSERT INTO `repositories` (`id`, `url`, `owner_id`, `name`, `full_name`, `description`,
@@ -80,7 +77,7 @@ class DatabaseService:
         self.__db.commit()
 
     def getRepoUrls(self):
-        self.__cursor.execute("SELECT url, id FROM repositories")
+        self.__cursor.execute("SELECT url, id FROM repositories ORDER BY stargazers_count DESC")
         self.__db.commit()
 
         urls = self.__cursor.fetchall()
