@@ -38,14 +38,19 @@ class DatabaseService:
         updated_at = dateutil.parser.parse(item["updated_at"])
         userURL = "https://api.github.com/users/" + item["owner"]["login"]
 
-        self.__cursor.execute("""INSERT INTO `repositories` (`id`, `url`, `owner_id`, `name`, `full_name`, `description`,
-        `language`, `created_at`, `updated_at`, `stargazers_count`, `watchers_count`, `forks_count`)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE name = name""",
-                       (id, url, owner_id, name, full_name, description, lang, created_at, updated_at, stars, watchers, forks,))
-
+        self.__cursor.execute(""" SELECT id from repositories where id = %s """, (id))
         self.__db.commit()
 
-        print("Inserted project into DB:" + item["full_name"])
+        repo = self.__cursor.fetchall()
+        if not repo:
+            self.__cursor.execute("""INSERT INTO `repositories` (`id`, `url`, `owner_id`, `name`, `full_name`, `description`,
+            `language`, `created_at`, `updated_at`, `stargazers_count`, `watchers_count`, `forks_count`)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE name = name""",
+                           (id, url, owner_id, name, full_name, description, lang, created_at, updated_at, stars, watchers, forks,))
+
+            self.__db.commit()
+
+            print("Inserted project into DB:" + item["full_name"])
 
 
     def insertUser(self, userData):
@@ -77,7 +82,7 @@ class DatabaseService:
         self.__db.commit()
 
     def getRepoUrls(self):
-        self.__cursor.execute("SELECT url, id FROM repositories ORDER BY stargazers_count DESC")
+        self.__cursor.execute("""SELECT url, id FROM repositories ORDER BY stargazers_count DESC""")
         self.__db.commit()
 
         urls = self.__cursor.fetchall()
@@ -86,12 +91,23 @@ class DatabaseService:
     def insertCommit(self, commit, project_id):
         sha = commit["sha"]
         url = commit["url"]
-        author_id= commit["author"]["id"]
-        committer_id = commit["committer"]["id"]
+        if commit["author"] is not None:
+            author_id= commit["author"]["id"]
+        else:
+            author_id = None
+        if commit["committer"] is not None:
+            committer_id = commit["committer"]["id"]
+        else:
+            committer_id = None
         message = commit["commit"]["message"]
         created_at = dateutil.parser.parse(commit["commit"]["author"]["date"])
-        additions = commit["stats"]["additions"]
-        deletions = commit["stats"]["deletions"]
+        if commit["stats"] is not None:
+            additions = commit["stats"]["additions"]
+            deletions = commit["stats"]["deletions"]
+        else:
+            additions = None
+            deletions = None
+
         self.__cursor.execute(
             """INSERT INTO `commits` (`sha`, `url`, `project_id`, `author_id`, `committer_id`, `message`,
             `created_at`, `additions`, `deletions`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE url = url """,
@@ -99,10 +115,11 @@ class DatabaseService:
         )
         print("Commit with sha: " + sha +" added")
         self.__db.commit()
-        self.insertFile(commit["files"], sha, project_id)
+        self.insertFiles(commit["files"], sha, project_id)
+
         return
 
-    def insertFile(self, files, commit_sha, project_id):
+    def insertFiles(self, files, commit_sha, project_id):
         for file in files:
             sha = file["sha"]
             filename = file["filename"]
@@ -124,3 +141,12 @@ class DatabaseService:
             self.__db.commit()
 
         return
+
+    def checkIfCommitExist(self, sha):
+        self.__cursor.execute(""" SELECT sha from commits where sha = %s """, (sha))
+        self.__db.commit()
+        _commit = self.__cursor.fetchall()
+        if _commit:
+            return True
+        else:
+            return False

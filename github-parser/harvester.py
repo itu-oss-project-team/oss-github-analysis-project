@@ -60,8 +60,8 @@ class GitHubHarvester:
     def retrieveCommits(self, since):
         urls = self.__databaseService.getRepoUrls()
         for repoURL, project_id in urls:
-            print("Retriving commits from repoURL")
-            requestURL = str(repoURL) + "/commits?since=" + since + "&page=1&per_page=100"
+            print("Retriving commits from " + repoURL)
+            requestURL = str(repoURL) + "/commits?" + since + "&page=1&per_page=100"
             res = self.__requester.makeRequest(requestURL)
             if (res.status_code == 200): #API has responded with OK status
                 returnJson = res.json()
@@ -74,18 +74,22 @@ class GitHubHarvester:
 
                 for i in range(1, int(last)+1):
                     print(i)
-                    _requestURL = str(repoURL) + "/commits?since=" + since + "&page=" + str(i) + "&per_page=100"
+                    _requestURL = str(repoURL) + "/commits?" + since + "&page=" + str(i) + "&per_page=100"
                     res = self.__requester.makeRequest(_requestURL)
                     returnJson = res.json()
 
                     for commit in returnJson:
-                        __requestURL = str(repoURL) + "/commits/" + str(commit["sha"])
-                        res = self.__requester.makeRequest(__requestURL)
-                        commitDetail = res.json()
-                        if commitDetail["author"]["login"] or commitDetail["committer"]["login"] is not None:
-                            self.retrieveSingleUser(commitDetail["author"]["login"])
-                            self.retrieveSingleUser(commitDetail["committer"]["login"])
-                        self.__databaseService.insertCommit(commitDetail, project_id)
+                        if self.__databaseService.checkIfCommitExist(commit["sha"]) == False:
+                            __requestURL = str(repoURL) + "/commits/" + str(commit["sha"])
+                            res = self.__requester.makeRequest(__requestURL)
+                            commitDetail = res.json()
+                            print("current commit sha: " + commitDetail["sha"])
+                            if commitDetail is not None:
+                                if commitDetail["author"] is not None:
+                                    self.retrieveSingleUser(commitDetail["author"]["login"])
+                                if commitDetail["committer"] is not None:
+                                    self.retrieveSingleUser(commitDetail["committer"]["login"])
+                                self.__databaseService.insertCommit(commitDetail, project_id)
 
             else: # Request gave an error
                 print("Error while retrieving: " + requestURL)
