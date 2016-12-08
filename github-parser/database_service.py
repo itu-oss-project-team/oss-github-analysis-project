@@ -127,16 +127,15 @@ class DatabaseService:
             additions = file["additions"]
             deletions = file["deletions"]
             changes = file["changes"]
-            contents_url = file["contents_url"]
             if "patch" in file:
                 patch = file["patch"]
             else:
                 patch = None
 
             self.__cursor.execute(
-                """ INSERT INTO `filechanges` (`sha`, `project_id`, `commit_sha`, `filename`, `status`, `additions`, `deletions`, `changes`, `contents_url`, `patch`)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE filename = filename""",
-                (sha,project_id, commit_sha, filename, status, additions, deletions, changes, contents_url, patch)
+                """ INSERT INTO `filechanges` (`sha`, `project_id`, `commit_sha`, `filename`, `status`, `additions`, `deletions`, `changes`, `patch`)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE filename = filename""",
+                (sha,project_id, commit_sha, filename, status, additions, deletions, changes, patch)
             )
             self.__db.commit()
 
