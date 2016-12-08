@@ -122,6 +122,8 @@ class DatabaseService:
     def insertFiles(self, files, commit_sha, project_id):
         for file in files:
             sha = file["sha"]
+            if sha is None:
+                sha = "null"
             filename = file["filename"]
             status = file["status"]
             additions = file["additions"]
