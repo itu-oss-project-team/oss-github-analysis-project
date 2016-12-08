@@ -11,7 +11,7 @@ class DatabaseService:
 
         self.__db = pymysql.connect(host=mysql_config['host'], port=mysql_config['port'], db=mysql_config['db'],
                              user=mysql_config['user'], passwd=mysql_config['passwd'],
-                             charset='utf8', use_unicode=True)
+                             charset='utf8mb4', use_unicode=True)
 
         self.__cursor = self.__db.cursor()
 
