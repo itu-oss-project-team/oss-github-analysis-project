@@ -68,7 +68,6 @@ def initDB(db):
             additions int NULL,
             deletions int NULL,
             changes int NULL,
-            contents_url varchar(191) NULL,
             patch text NULL,
             CONSTRAINT filechanges_pk PRIMARY KEY (sha)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
