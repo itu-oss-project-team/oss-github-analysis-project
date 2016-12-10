@@ -95,3 +95,39 @@ class GitHubHarvester:
                 print("Error while retrieving: " + requestURL)
                 print("Status code: "  + res.status_code)
 
+            
+            
+    def retrieveContributors(self):
+        
+        repos = self.__databaseService.getAllRepoNames()
+        
+        for id,name in repos:
+            repoName = name
+            repoid = id
+            owner = self.__databaseService.getOwnerLoginbyId(repoid)
+            index = 1
+            
+            while(1):
+                contributionsURL = "https://api.github.com/repos/"+ owner[0] +"/"+ repoName +"/contributors?page="+str(index)+"&per_page=1"
+                result = self.__requester.makeRequest(contributionsURL)
+                print(contributionsURL)
+                
+                if(result.status_code == 200):
+                    resultJson = result.json()
+                    index = index + 1
+                    if resultJson is None:
+                        break
+                    else:
+                        for contributor in resultJson:
+                            userid = contributor["id"]
+                            login = contributor["login"]
+                            print("Adding the user with login: " + login)
+                            self.retrieveSingleUser(login)
+                            
+                            #this would be the place to insert to my Contributions table
+                            #IF I HAD ONE
+                            #self.__databaseService.insertContribution(repoid,userid)
+                    
+                else: # Request gave an error
+                    print("Error while retrieving: " + contributionsURL)
+                    print("Status code: "  + result.status_code)

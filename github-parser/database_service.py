@@ -146,3 +146,23 @@ class DatabaseService:
             return True
         else:
             return False
+        
+        
+    def getAllRepoNames(self):
+        self.__cursor.execute(""" SELECT owner_id,name from repositories""")
+        self.__db.commit()
+        names = self.__cursor.fetchall()
+        return names
+    
+    def getOwnerLoginbyId(self,id):
+        self.__cursor.execute(""" SELECT login from users where id = %s""",(id))
+        self.__db.commit()
+        login = self.__cursor.fetchone()
+        return login
+    
+    
+    
+    ## contributions tablosu yok
+    #def insertContribution(self,repoid,userid):
+     #   self.__cursor.execute(""" INSERT INTO contributions (contributor_id,repo_id)values (%s,%s)""",(userid,repoid))
+     #   self.__db.commit()
