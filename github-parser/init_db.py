@@ -58,6 +58,13 @@ def initDB(db):
 
         CREATE INDEX author_id ON commits (author_id);
 
+        -- Table: contributings
+        CREATE TABLE contributings (
+            user_id int NOT NULL,
+            repository_id int NOT NULL,
+            contributions int NULL
+        ) ENGINE InnoDB CHARACTER SET utf8mb4;
+
         -- Table: filechanges
         CREATE TABLE filechanges (
             sha varchar(191) NOT NULL,
@@ -68,6 +75,8 @@ def initDB(db):
             additions int NULL,
             deletions int NULL,
             changes int NULL,
+            contents_url varchar(191) NULL,
+            patch text NULL,
             CONSTRAINT filechanges_pk PRIMARY KEY (sha)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
@@ -105,12 +114,20 @@ def initDB(db):
             login varchar(191) NOT NULL,
             name varchar(191) NULL DEFAULT NULL,
             company varchar(191) NULL DEFAULT NULL,
-            email varchar(191) NULL DEFAULT NULL,
+            email varchar(191) NOT NULL DEFAULT NULL,
             bio text NULL DEFAULT NULL,
-            CONSTRAINT id PRIMARY KEY (id)
+            CONSTRAINT users_pk PRIMARY KEY (id)
         ) CHARACTER SET utf8mb4;
 
         -- foreign keys
+        -- Reference: contributings_repositories (table: contributings)
+        ALTER TABLE contributings ADD CONSTRAINT contributings_repositories FOREIGN KEY contributings_repositories (repository_id)
+            REFERENCES repositories (id);
+
+        -- Reference: contributings_users (table: contributings)
+        ALTER TABLE contributings ADD CONSTRAINT contributings_users FOREIGN KEY contributings_users (user_id)
+            REFERENCES users (id);
+
         -- Reference: fk_commits_authors (table: commits)
         ALTER TABLE commits ADD CONSTRAINT fk_commits_authors FOREIGN KEY fk_commits_authors (committer_id)
             REFERENCES users (id);
@@ -121,7 +138,7 @@ def initDB(db):
 
         -- Reference: fk_commits_repositories (table: commits)
         ALTER TABLE commits ADD CONSTRAINT fk_commits_repositories FOREIGN KEY fk_commits_repositories (project_id)
-            REFERENCES repositories (id);
+            REFERENCES repositories (<EMPTY>);
 
         -- Reference: fk_filechanges_commits (table: filechanges)
         ALTER TABLE filechanges ADD CONSTRAINT fk_filechanges_commits FOREIGN KEY fk_filechanges_commits (commit_sha)
@@ -129,11 +146,11 @@ def initDB(db):
 
         -- Reference: fk_filechanges_repositories (table: filechanges)
         ALTER TABLE filechanges ADD CONSTRAINT fk_filechanges_repositories FOREIGN KEY fk_filechanges_repositories (project_id)
-            REFERENCES repositories (id);
+            REFERENCES repositories (<EMPTY>);
 
         -- Reference: fk_filesofproject_repositories (table: filesofproject)
         ALTER TABLE filesofproject ADD CONSTRAINT fk_filesofproject_repositories FOREIGN KEY fk_filesofproject_repositories (project_id)
-            REFERENCES repositories (id)
+            REFERENCES repositories (<EMPTY>)
             ON DELETE CASCADE
             ON UPDATE CASCADE;
 
