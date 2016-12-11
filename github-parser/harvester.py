@@ -37,7 +37,8 @@ class GitHubHarvester:
                     if project["language"] is None:
                         continue
                     userLogin = project["owner"]["login"]
-                    self.retrieveSingleUser(userLogin)
+                    if self.__databaseService.checkIfGithubUserExist(userLogin) == False:
+                        self.retrieveSingleUser(userLogin)
                     self.__databaseService.insertProject(project)
         else: # Request gave an error
             print("Error while retrieving: " + requestURL)
@@ -50,7 +51,7 @@ class GitHubHarvester:
         res = self.__requester.makeRequest(userURL)
         userData = res.json()
         if (res.status_code == 200):  # API has responded with OK status
-            self.__databaseService.insertUser(userData)
+            self.__databaseService.insertGithubUser(userData)
         else:  # Request gave an error
             print("Error while retriving: " + userURL)
             print("Status code: " + res.status_code)
@@ -85,12 +86,21 @@ class GitHubHarvester:
                             commitDetail = res.json()
                             print("current commit sha: " + commitDetail["sha"])
                             if commitDetail is not None:
+
                                 if commitDetail["author"] is not None:
-                                    if self.__databaseService.checkIfUserExist(commitDetail["author"]["login"]) == False:
+                                    if self.__databaseService.checkIfGithubUserExist(commitDetail["author"]["login"]) == False:
                                         self.retrieveSingleUser(commitDetail["author"]["login"])
+                                else:
+                                    if self.__databaseService.checkIfUserExist(commitDetail["commit"]["author"]["email"]) == False:
+                                        self.__databaseService.insertUser(commitDetail["commit"]["author"])
+
                                 if commitDetail["committer"] is not None:
-                                    if self.__databaseService.checkIfUserExist(commitDetail["committer"]["login"]) == False:
+                                    if self.__databaseService.checkIfGithubUserExist(commitDetail["committer"]["login"]) == False:
                                         self.retrieveSingleUser(commitDetail["committer"]["login"])
+                                else:
+                                    if self.__databaseService.checkIfUserExist(commitDetail["commit"]["committer"]["email"]) == False:
+                                        self.__databaseService.insertUser(commitDetail["commit"]["committer"])
+
                                 self.__databaseService.insertCommit(commitDetail, project_id)
 
             else: # Request gave an error
@@ -133,5 +143,3 @@ class GitHubHarvester:
                 else: # Request gave an error
                     print("Error while retrieving: " + contributionsURL)
                     print("Status code: "  + result.status_code)
-
-

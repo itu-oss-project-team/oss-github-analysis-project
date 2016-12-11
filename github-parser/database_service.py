@@ -21,7 +21,7 @@ class DatabaseService:
         name = item["name"].encode('utf-8', 'ignore')
         full_name = item["full_name"].encode('utf-8', 'ignore')
         html_url = item["html_url"].encode('utf-8', 'ignore')
-        owner_id = item["owner"]["id"]
+        owner_id = self.getUserId(0, item["owner"]["login"])
         description = item["description"]
 
         if description is not None:
@@ -36,7 +36,6 @@ class DatabaseService:
         watchers = item["watchers_count"]
         created_at = dateutil.parser.parse(item["created_at"])
         updated_at = dateutil.parser.parse(item["updated_at"])
-        userURL = "https://api.github.com/users/" + item["owner"]["login"]
 
         self.__cursor.execute(""" SELECT id from repositories where id = %s """, (id))
         self.__db.commit()
@@ -46,38 +45,37 @@ class DatabaseService:
             self.__cursor.execute("""INSERT INTO `repositories` (`id`, `url`, `owner_id`, `name`, `full_name`, `description`,
             `language`, `created_at`, `updated_at`, `stargazers_count`, `watchers_count`, `forks_count`)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON DUPLICATE KEY UPDATE name = name""",
-                           (id, url, owner_id, name, full_name, description, lang, created_at, updated_at, stars, watchers, forks,))
+                           (id, url, owner_id, name, full_name, description, lang, created_at, updated_at, stars, watchers, forks))
 
             self.__db.commit()
 
             print("Inserted project into DB:" + item["full_name"])
 
 
+    def insertGithubUser(self, githubUserData):
+
+        userId = githubUserData["id"]
+        userLogin = githubUserData["login"]
+        userName = githubUserData["name"]
+        userCompany = githubUserData["company"]
+        userEmail = githubUserData["email"]
+        userBio = githubUserData["bio"]
+        userUrl = githubUserData["url"]
+
+        self.__cursor.execute("""INSERT INTO users(github_user_id, login,name,company,email, bio, url, is_github_user) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                 ON DUPLICATE KEY UPDATE login = login""",
+                 (userId, userLogin, userName, userCompany, userEmail, userBio, userUrl, 1))
+
+        self.__db.commit()
+
     def insertUser(self, userData):
 
-        userId = userData["id"]
-        userLogin = userData["login"].encode('utf-8', 'ignore')
         userName = userData["name"]
-        if userName is not None:
-         userName = userName.encode('utf-8', 'ignore')
-
-        userCompany = userData["company"]
-        if userCompany is not None:
-         userCompany = userCompany.encode('utf-8', 'ignore')
-
         userEmail = userData["email"]
-        if userEmail is not None:
-         userEmail = userEmail.encode('utf-8', 'ignore')
 
-        userBio = userData["bio"]
-        if userBio is not None:
-         userBio = userBio.encode('utf-8', 'ignore')
-
-        userUrl = userData["url"]
-
-        self.__cursor.execute("""INSERT INTO users(id, login,name,company,email, bio, url) VALUES (%s,%s,%s,%s,%s,%s, %s)
+        self.__cursor.execute("""INSERT INTO users(name,email, is_github_user) VALUES (%s,%s,%s)
                  ON DUPLICATE KEY UPDATE login = login""",
-                 (userId, userLogin, userName, userCompany, userEmail, userBio, userUrl))
+                 (userName, userEmail, 0))
 
         self.__db.commit()
 
@@ -91,14 +89,17 @@ class DatabaseService:
     def insertCommit(self, commit, project_id):
         sha = commit["sha"]
         url = commit["url"]
+
         if commit["author"] is not None:
-            author_id= commit["author"]["id"]
+            author_id= self.getUserId(0, commit["author"]["login"])
         else:
-            author_id = None
+            author_id = self.getUserId(1, commit["commit"]["author"]["email"])
+
         if commit["committer"] is not None:
-            committer_id = commit["committer"]["id"]
+            committer_id = self.getUserId(0, commit["committer"]["login"])
         else:
-            committer_id = None
+            committer_id = self.getUserId(1, commit["commit"]["committer"]["email"])
+
         message = commit["commit"]["message"]
         created_at = dateutil.parser.parse(commit["commit"]["author"]["date"])
         if commit["stats"] is not None:
@@ -158,12 +159,12 @@ class DatabaseService:
         return names
 
     def getOwnerLoginbyId(self,id):
-        self.__cursor.execute(""" SELECT login from users where id = %s""",(id))
+        self.__cursor.execute(""" SELECT login from users where github_user_id = %s""",(id))
         self.__db.commit()
         login = self.__cursor.fetchone()
         return login
 
-    def checkIfUserExist(self, login):
+    def checkIfGithubUserExist(self, login):
         self.__cursor.execute(""" SELECT login from users where login = %s""", (login))
         self.__db.commit()
         _login = self.__cursor.fetchone()
@@ -172,6 +173,25 @@ class DatabaseService:
         else:
             return False
 
+    def checkIfUserExist(self, email):
+        self.__cursor.execute(""" SELECT email from users where email = %s""", (email))
+        self.__db.commit()
+        _email = self.__cursor.fetchone()
+        if _email:
+            return True
+        else:
+            return False
+
+    def getUserId(self, type, data):
+        if type == 0: #github user
+            self.__cursor.execute(""" SELECT user_id from users where login = %s""", (data))
+        elif type == 1: #not github user
+            self.__cursor.execute(""" SELECT user_id from users where email = %s""", (data))
+
+        self.__db.commit()
+        user_id = self.__cursor.fetchone()
+
+        return user_id[0]
 
     ## contributions tablosu yok
     #def insertContribution(self,repoid,userid):
