@@ -21,7 +21,7 @@ class DatabaseService:
         name = item["name"].encode('utf-8', 'ignore')
         full_name = item["full_name"].encode('utf-8', 'ignore')
         html_url = item["html_url"].encode('utf-8', 'ignore')
-        owner_id = self.getUserId(0, item["owner"]["login"])
+        owner_id = self.getUserIdFromLogin(item["owner"]["login"])
         description = item["description"]
 
         if description is not None:
@@ -91,14 +91,14 @@ class DatabaseService:
         url = commit["url"]
 
         if commit["author"] is not None:
-            author_id= self.getUserId(0, commit["author"]["login"])
+            author_id= self.getUserIdFromLogin(commit["author"]["login"])
         else:
-            author_id = self.getUserId(1, commit["commit"]["author"]["email"])
+            author_id = self.getUserIdFromEmail(commit["commit"]["author"]["email"])
 
         if commit["committer"] is not None:
-            committer_id = self.getUserId(0, commit["committer"]["login"])
+            committer_id = self.getUserIdFromLogin(commit["committer"]["login"])
         else:
-            committer_id = self.getUserId(1, commit["commit"]["committer"]["email"])
+            committer_id = self.getUserIdFromEmail(commit["commit"]["committer"]["email"])
 
         message = commit["commit"]["message"]
         created_at = dateutil.parser.parse(commit["commit"]["author"]["date"])
@@ -181,19 +181,6 @@ class DatabaseService:
             return True
         else:
             return False
-
-    def getUserId(self, type, data):
-        if type == 0: #github user
-            self.__cursor.execute(""" SELECT user_id from users where login = %s""", (data))
-        elif type == 1: #not github user
-            self.__cursor.execute(""" SELECT user_id from users where email = %s""", (data))
-
-        self.__db.commit()
-        user_id = self.__cursor.fetchone()
-
-        return user_id[0]
-
-
 
     # Returns user id associated with given e-mail, for non-GitHub users
     def getUserIdFromEmail(self, email):
