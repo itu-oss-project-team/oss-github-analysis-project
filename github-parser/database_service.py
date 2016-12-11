@@ -193,7 +193,27 @@ class DatabaseService:
 
         return user_id[0]
 
-    
+
+
+    # Returns user id associated with given e-mail, for non-GitHub users
+    def getUserIdFromEmail(self, email):
+        self.__cursor.execute(""" SELECT user_id from users where email = %s""", (email))
+
+        self.__db.commit()
+        user_id = self.__cursor.fetchone()
+
+        return user_id[0]
+
+    # Returns user id associated with given GitHub login name, for GitHub users
+    def getUserIdFromLogin(self, login):
+        self.__cursor.execute(""" SELECT user_id from users where login = %s""", (login))
+
+        self.__db.commit()
+        user_id = self.__cursor.fetchone()
+
+        return user_id[0]
+
+
     def insertContribution(self,userid, repoid,contributions):
        self.__cursor.execute(""" INSERT INTO contributings (repository_id,user_id,contributions)values (%s,%s,%s)""",(repoid,userid,contributions))
        self.__db.commit()
