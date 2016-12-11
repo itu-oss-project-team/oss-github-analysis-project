@@ -136,6 +136,9 @@ class DatabaseService:
             )
             self.__db.commit()
 
+            self.__cursor.execute(
+                """ INSERT INTO `filesofproject` (`filename`, `project_id`) VALUES (%s, %s) ON DUPLICATE KEY UPDATE project_id = project_id""", (filename, project_id))
+            self.__db.commit()
         return
 
     def checkIfCommitExist(self, sha):
@@ -146,22 +149,30 @@ class DatabaseService:
             return True
         else:
             return False
-        
-        
+
+
     def getAllRepoNames(self):
         self.__cursor.execute(""" SELECT owner_id,name from repositories""")
         self.__db.commit()
         names = self.__cursor.fetchall()
         return names
-    
+
     def getOwnerLoginbyId(self,id):
         self.__cursor.execute(""" SELECT login from users where id = %s""",(id))
         self.__db.commit()
         login = self.__cursor.fetchone()
         return login
-    
-    
-    
+
+    def checkIfUserExist(self, login):
+        self.__cursor.execute(""" SELECT login from users where login = %s""", (login))
+        self.__db.commit()
+        _login = self.__cursor.fetchone()
+        if _login:
+            return True
+        else:
+            return False
+
+
     ## contributions tablosu yok
     #def insertContribution(self,repoid,userid):
      #   self.__cursor.execute(""" INSERT INTO contributions (contributor_id,repo_id)values (%s,%s)""",(userid,repoid))

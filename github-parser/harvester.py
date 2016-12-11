@@ -86,32 +86,34 @@ class GitHubHarvester:
                             print("current commit sha: " + commitDetail["sha"])
                             if commitDetail is not None:
                                 if commitDetail["author"] is not None:
-                                    self.retrieveSingleUser(commitDetail["author"]["login"])
+                                    if self.__databaseService.checkIfUserExist(commitDetail["author"]["login"]) == False:
+                                        self.retrieveSingleUser(commitDetail["author"]["login"])
                                 if commitDetail["committer"] is not None:
-                                    self.retrieveSingleUser(commitDetail["committer"]["login"])
+                                    if self.__databaseService.checkIfUserExist(commitDetail["committer"]["login"]) == False:
+                                        self.retrieveSingleUser(commitDetail["committer"]["login"])
                                 self.__databaseService.insertCommit(commitDetail, project_id)
 
             else: # Request gave an error
                 print("Error while retrieving: " + requestURL)
                 print("Status code: "  + res.status_code)
 
-            
-            
+
+
     def retrieveContributors(self):
-        
+
         repos = self.__databaseService.getAllRepoNames()
-        
+
         for id,name in repos:
             repoName = name
             repoid = id
             owner = self.__databaseService.getOwnerLoginbyId(repoid)
             index = 1
-            
+
             while(1):
                 contributionsURL = "https://api.github.com/repos/"+ owner[0] +"/"+ repoName +"/contributors?page="+str(index)+"&per_page=1"
                 result = self.__requester.makeRequest(contributionsURL)
                 print(contributionsURL)
-                
+
                 if(result.status_code == 200):
                     resultJson = result.json()
                     index = index + 1
@@ -123,11 +125,13 @@ class GitHubHarvester:
                             login = contributor["login"]
                             print("Adding the user with login: " + login)
                             self.retrieveSingleUser(login)
-                            
+
                             #this would be the place to insert to my Contributions table
                             #IF I HAD ONE
                             #self.__databaseService.insertContribution(repoid,userid)
-                    
+
                 else: # Request gave an error
                     print("Error while retrieving: " + contributionsURL)
                     print("Status code: "  + result.status_code)
+
+

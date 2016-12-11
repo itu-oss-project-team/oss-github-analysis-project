@@ -27,7 +27,7 @@ def clearDB(db):
     cursor = db.cursor()
     cursor.execute("""
             DROP TABLE IF EXISTS
-            `filechanges`, `commits`, `filesofproject`, `repositories`, `users`;
+            `contributings`, `filechanges`, `commits`, `filesofproject`, `repositories`, `users`;
     """)
 
     db.commit()
@@ -75,8 +75,6 @@ def initDB(db):
             additions int NULL,
             deletions int NULL,
             changes int NULL,
-            contents_url varchar(191) NULL,
-            patch text NULL,
             CONSTRAINT filechanges_pk PRIMARY KEY (sha)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
@@ -114,7 +112,7 @@ def initDB(db):
             login varchar(191) NOT NULL,
             name varchar(191) NULL DEFAULT NULL,
             company varchar(191) NULL DEFAULT NULL,
-            email varchar(191) NOT NULL DEFAULT NULL,
+            email varchar(191) NULL DEFAULT NULL,
             bio text NULL DEFAULT NULL,
             CONSTRAINT users_pk PRIMARY KEY (id)
         ) CHARACTER SET utf8mb4;
@@ -138,7 +136,7 @@ def initDB(db):
 
         -- Reference: fk_commits_repositories (table: commits)
         ALTER TABLE commits ADD CONSTRAINT fk_commits_repositories FOREIGN KEY fk_commits_repositories (project_id)
-            REFERENCES repositories (<EMPTY>);
+            REFERENCES repositories (id);
 
         -- Reference: fk_filechanges_commits (table: filechanges)
         ALTER TABLE filechanges ADD CONSTRAINT fk_filechanges_commits FOREIGN KEY fk_filechanges_commits (commit_sha)
@@ -146,11 +144,11 @@ def initDB(db):
 
         -- Reference: fk_filechanges_repositories (table: filechanges)
         ALTER TABLE filechanges ADD CONSTRAINT fk_filechanges_repositories FOREIGN KEY fk_filechanges_repositories (project_id)
-            REFERENCES repositories (<EMPTY>);
+            REFERENCES repositories (id);
 
         -- Reference: fk_filesofproject_repositories (table: filesofproject)
         ALTER TABLE filesofproject ADD CONSTRAINT fk_filesofproject_repositories FOREIGN KEY fk_filesofproject_repositories (project_id)
-            REFERENCES repositories (<EMPTY>)
+            REFERENCES repositories (id)
             ON DELETE CASCADE
             ON UPDATE CASCADE;
 
