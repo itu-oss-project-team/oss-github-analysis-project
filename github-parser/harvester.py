@@ -19,7 +19,7 @@ class GitHubHarvester:
 
         if (res.status_code == 200): #API has responded with OK status
             returnJson = res.json()
-            if res.links == "{}":
+            if res.links:
                 print(res.links)
                 indexStart = res.links["last"]["url"].find("page=")
                 indexEnd = res.links["last"]["url"].find("&per_page")
@@ -66,7 +66,7 @@ class GitHubHarvester:
             res = self.__requester.makeRequest(requestURL)
             if (res.status_code == 200): #API has responded with OK status
                 returnJson = res.json()
-                if res.links == "{}":
+                if res.links:
                     indexStart = res.links["last"]["url"].find("page=")
                     indexEnd = res.links["last"]["url"].find("&per_page")
                     last = res.links["last"]["url"][indexStart+5:indexEnd]
@@ -123,14 +123,14 @@ class GitHubHarvester:
                 if(result.status_code == 200):
                     resultJson = result.json()
                     index = index + 1
-                    
+
                     if resultJson is None:
                         break
                     else:
                         for contributor in resultJson:
                             login = contributor["login"]
-                            contributions = contributor["contributions"]                            
-                            
+                            contributions = contributor["contributions"]
+
                             print("Adding the user with login: " + login)
                             self.retrieveSingleUser(login)
                             userid = self.__databaseService.getUserId(0,login)
