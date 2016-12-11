@@ -25,7 +25,7 @@ def main():
     insertProject(github_harvester, secret_config)
 
 def insertProject(github_harvester, secret_config):
-    github_harvester.retrieveProjects(40000) #stargazers_count is given as argument.
+    github_harvester.retrieveProjects("40000") #stargazers_count is given as argument.
     github_harvester.retrieveCommits("since=2016-05-01T00:00:00Z") #since is given as argument.
     github_harvester.retrieveContributors()
     return

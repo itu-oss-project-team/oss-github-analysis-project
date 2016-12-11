@@ -80,8 +80,8 @@ def initDB(db):
 
         -- Table: filesofproject
         CREATE TABLE filesofproject (
-            filename varchar(191) NOT NULL,
             project_id int NOT NULL,
+            filename varchar(191) NOT NULL,
             CONSTRAINT file_name PRIMARY KEY (filename)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
@@ -107,14 +107,16 @@ def initDB(db):
 
         -- Table: users
         CREATE TABLE users (
-            id int NOT NULL,
-            url varchar(191) NOT NULL,
-            login varchar(191) NOT NULL,
+            user_id int NOT NULL AUTO_INCREMENT,
+            github_user_id int NULL,
+            url varchar(191) NULL,
+            login varchar(191) NULL,
             name varchar(191) NULL DEFAULT NULL,
             company varchar(191) NULL DEFAULT NULL,
             email varchar(191) NULL DEFAULT NULL,
             bio text NULL DEFAULT NULL,
-            CONSTRAINT users_pk PRIMARY KEY (id)
+            is_github_user bool NOT NULL,
+            CONSTRAINT users_pk PRIMARY KEY (user_id)
         ) CHARACTER SET utf8mb4;
 
         -- foreign keys
@@ -124,15 +126,15 @@ def initDB(db):
 
         -- Reference: contributings_users (table: contributings)
         ALTER TABLE contributings ADD CONSTRAINT contributings_users FOREIGN KEY contributings_users (user_id)
-            REFERENCES users (id);
+            REFERENCES users (user_id);
 
         -- Reference: fk_commits_authors (table: commits)
         ALTER TABLE commits ADD CONSTRAINT fk_commits_authors FOREIGN KEY fk_commits_authors (committer_id)
-            REFERENCES users (id);
+            REFERENCES users (user_id);
 
         -- Reference: fk_commits_committers (table: commits)
         ALTER TABLE commits ADD CONSTRAINT fk_commits_committers FOREIGN KEY fk_commits_committers (author_id)
-            REFERENCES users (id);
+            REFERENCES users (user_id);
 
         -- Reference: fk_commits_repositories (table: commits)
         ALTER TABLE commits ADD CONSTRAINT fk_commits_repositories FOREIGN KEY fk_commits_repositories (project_id)
@@ -154,7 +156,7 @@ def initDB(db):
 
         -- Reference: fk_repositories_users (table: repositories)
         ALTER TABLE repositories ADD CONSTRAINT fk_repositories_users FOREIGN KEY fk_repositories_users (owner_id)
-            REFERENCES users (id)
+            REFERENCES users (user_id)
             ON DELETE CASCADE
             ON UPDATE CASCADE;
     """)
