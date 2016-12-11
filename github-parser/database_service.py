@@ -193,7 +193,7 @@ class DatabaseService:
 
         return user_id[0]
 
-    ## contributions tablosu yok
-    #def insertContribution(self,repoid,userid):
-     #   self.__cursor.execute(""" INSERT INTO contributions (contributor_id,repo_id)values (%s,%s)""",(userid,repoid))
-     #   self.__db.commit()
+    
+    def insertContribution(self,userid, repoid,contributions):
+       self.__cursor.execute(""" INSERT INTO contributings (repository_id,user_id,contributions)values (%s,%s,%s)""",(repoid,userid,contributions))
+       self.__db.commit()
