@@ -115,8 +115,9 @@ class GitHubHarvester:
 
         for repoUrl, project_id in repos:
             index = 1
+            
             while(1):
-                contributionsURL = repoUrl + "/contributors"
+                contributionsURL = repoUrl + "/contributors?page= " +  str(index) + "&per_page=100" 
                 result = self.__requester.makeRequest(contributionsURL)
                 print(contributionsURL)
 
@@ -124,8 +125,8 @@ class GitHubHarvester:
                     resultJson = result.json()
                     index = index + 1
                     
-                    if resultJson is None:
-                        break
+                    if not resultJson:
+                        break                        
                     else:
                         for contributor in resultJson:
                             login = contributor["login"]
@@ -134,7 +135,7 @@ class GitHubHarvester:
                             print("Adding the user with login: " + login)
                             self.retrieveSingleUser(login)
                             userid = self.__databaseService.getUserId(0,login)
-                            self.__databaseService.insertContribution(userid,project_id,contributions)
+                            self.__databaseService.insertContribution(userid,project_id,contributions)                        
 
                 else: # Request gave an error
                     print("Error while retrieving: " + contributionsURL)
