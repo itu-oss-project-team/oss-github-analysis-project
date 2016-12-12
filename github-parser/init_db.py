@@ -99,6 +99,7 @@ def initDB(db):
             stargazers_count int NULL DEFAULT NULL,
             watchers_count int NULL DEFAULT NULL,
             forks_count int NULL DEFAULT NULL,
+            filled_at timestamp NULL DEFAULT NULL,
             UNIQUE INDEX name (name,owner_id),
             CONSTRAINT projects_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;

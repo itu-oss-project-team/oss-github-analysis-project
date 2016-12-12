@@ -151,6 +151,25 @@ class DatabaseService:
         else:
             return False
 
+    def checkIfRepoFilled(self, repo_id, time_since = None):
+        if(time_since is None):
+            # No time value has been specified just check whether repo is filled before or nor
+            self.__cursor.execute(""" SELECT `id` FROM `repositories` WHERE `id` = %s AND `filled_at` IS NOT NULL""", (repo_id))
+        else:
+            # A time value has been specified, check wheter repo's content is newer than given time
+            test = dateutil.parser.parse(time_since)
+            date = str(dateutil.parser.parse(time_since))
+            self.__cursor.execute(""" SELECT `id` FROM `repositories` WHERE `id` = %s AND `filled_at` > %s """, (repo_id, date))
+
+        self.__db.commit()
+        repos = self.__cursor.fetchone()
+
+        if (repos is not None):
+            # Repo exists or newer
+            return True
+        else:
+            # Repor does not new enough
+            return False
 
     def getAllRepoNames(self):
         self.__cursor.execute(""" SELECT owner_id,name from repositories""")
@@ -200,6 +219,9 @@ class DatabaseService:
 
         return user_id[0]
 
+    def setRepoFilledAt(self, repo_id, filled_time):
+        self.__cursor.execute(""" UPDATE repositories SET filled_at = %s WHERE id = %s""", (filled_time, repo_id))
+        self.__db.commit()
 
     def insertContribution(self,userid, repoid,contributions):
        self.__cursor.execute(""" INSERT INTO contributings (repository_id,user_id,contributions)values (%s,%s,%s)""",(repoid,userid,contributions))
