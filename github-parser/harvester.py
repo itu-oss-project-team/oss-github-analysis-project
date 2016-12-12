@@ -36,7 +36,7 @@ class GitHubHarvester:
             start_time_string = str(datetime.now())
             start_time = time.time()
             self.__retrieveCommitsOfRepo(repo_url, repo_id, timeParam)
-            #self.__retrieveContributorsOfRepo(repo_url, repo_id)
+            self.__retrieveContributorsOfRepo(repo_url, repo_id)
             # Let's mark the repo as filled with time which is begining of fetching
             self.__databaseService.setRepoFilledAt(repo_id, start_time_string)
             elapsed_time = time.time() - start_time
@@ -156,7 +156,10 @@ class GitHubHarvester:
                         contributions = contributor["contributions"]
 
                         print("Adding the user with login: " + login)
-                        self.__retrieveSingleUser(login)
+                        if(self.__databaseService.checkIfGithubUserExist(login) is False):
+                            # There is no user entry in our DB with this login info so just fetch and insert it
+                            self.__retrieveSingleUser(login)
+
                         userid = self.__databaseService.getUserIdFromLogin(login)
                         self.__databaseService.insertContribution(userid,project_id,contributions)
 
