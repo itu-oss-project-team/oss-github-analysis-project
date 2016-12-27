@@ -26,6 +26,7 @@ class GitHubHarvester:
 
         repos = self.__databaseService.getRepoUrls()
         for repo_url, repo_id in repos:
+            #self.__databaseService.findNumberOfCommitsAndContributorsOfProjectMonthly(repo_id)
             if(self.__databaseService.checkIfRepoFilled(repo_id)):
                 # Repo filled before so i can skip it now
                 print("Repo already fetched: " + repo_url)
@@ -72,7 +73,7 @@ class GitHubHarvester:
                     self.__databaseService.insertProject(project)
         else: # Request gave an error
             print("Error while retrieving: " + requestURL)
-            print("Status code: "  + res.status_code)
+            print("Status code: "  + str(res.status_code))
         print("Finished retriving projects")
         return
 
@@ -112,7 +113,7 @@ class GitHubHarvester:
                         __requestURL = str(repoURL) + "/commits/" + str(commit["sha"])
                         res = self.__requester.makeRequest(__requestURL)
                         commitDetail = res.json()
-                        print("current commit sha: " + commitDetail["sha"])
+                        print( str(repoURL) + " current commit sha: " + commitDetail["sha"])
                         if commitDetail is not None:
 
                             if commitDetail["author"] is not None:
