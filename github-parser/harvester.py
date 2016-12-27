@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import requests
 from requester import GitHubRequester
 from database_service import DatabaseService
 from datetime import datetime
@@ -13,20 +12,50 @@ class GitHubHarvester:
         self.__requester = GitHubRequester(secret_config['github-api'])
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
+    def fetchRepo(self, owner, repo, since_date=None, until_date=None, force_fetch=False):
+        repo_url = "https://api.github.com/repos/" + owner + "/" + repo
+        time_param = self.__buildTimeParameterString(since_date, until_date)
+        res = self.__requester.makeRequest(repo_url)
 
-    def fetchProjects(self, min_stars, since_date, until_date):
+        if res.status_code == 200:  # API has responded with OK status
+            repo = res.json()
+            repo_id = repo['id']
+            if repo["language"] is None:
+                print("Project language is none, skipped.")
+                return
+            user_login = repo["owner"]["login"]
+            if not self.__databaseService.checkIfGithubUserExist(user_login):
+                self.__retrieveSingleUser(user_login)
+            self.__databaseService.insertProject(repo)
+        else:  # Request gave an error
+            print("Error while retrieving: " + repo_url)
+            print("Status code: " + res.status_code)
+
+        if not force_fetch and self.__databaseService.checkIfRepoFilled(repo_id):
+            # Repo filled before so i can skip it now
+            print("Repo already fetched: " + repo_url)
+            return
+
+        print("---> Fetching: " + repo_url)
+        # Repo can be new as it's first info
+        start_time_string = str(datetime.now())
+        start_time = time.time()
+        self.__retrieveCommitsOfRepo(repo_url, repo_id, time_param)
+        self.__retrieveContributorsOfRepo(repo_url, repo_id)
+        # Let's mark the repo as filled with time which is beginning of fetching
+        self.__databaseService.setRepoFilledAt(repo_id, start_time_string)
+        elapsed_time = time.time() - start_time
+        print("---> " + repo_url + " fetched in " + str(elapsed_time) + " seconds.")
+        return
+
+    def fetchRepos(self, min_stars, since_date=None, until_date=None, force_fetch=False):
         self.__retrieveProjects(min_stars)
 
-        # Let's build time parameters string for requests that accept time intervals as parameters
-        timeParam = ""
-        if (since_date is not None):
-            timeParam = timeParam + "&since=" + since_date
-        if (until_date is not None):
-            timeParam = timeParam + "&until=" + until_date
+        time_param = self.__buildTimeParameterString(since_date, until_date)
 
         repos = self.__databaseService.getRepoUrls()
         for repo_url, repo_id in repos:
-            if(self.__databaseService.checkIfRepoFilled(repo_id)):
+            if not force_fetch and self.__databaseService.checkIfRepoFilled(repo_id):
                 # Repo filled before so i can skip it now
                 print("Repo already fetched: " + repo_url)
                 continue
@@ -35,12 +64,12 @@ class GitHubHarvester:
             # Repo can be new as it's first info
             start_time_string = str(datetime.now())
             start_time = time.time()
-            self.__retrieveCommitsOfRepo(repo_url, repo_id, timeParam)
+            self.__retrieveCommitsOfRepo(repo_url, repo_id, time_param)
             self.__retrieveContributorsOfRepo(repo_url, repo_id)
-            # Let's mark the repo as filled with time which is begining of fetching
+            # Let's mark the repo as filled with time which is beginning of fetching
             self.__databaseService.setRepoFilledAt(repo_id, start_time_string)
             elapsed_time = time.time() - start_time
-            print("---> " + repo_url + " fetched in " + str(elapsed_time)  + " seconds." )
+            print("---> " + repo_url + " fetched in " + str(elapsed_time) + " seconds.")
 
     def __retrieveProjects(self, stars_count):
 
@@ -102,7 +131,7 @@ class GitHubHarvester:
                 last = 1
 
             for i in range(1, int(last)+1):
-                print(i)
+                print("Commits page: " , i)
                 _requestURL = str(repoURL) + "/commits?" + since + "&page=" + str(i) + "&per_page=100"
                 res = self.__requester.makeRequest(_requestURL)
                 returnJson = res.json()
@@ -112,7 +141,7 @@ class GitHubHarvester:
                         __requestURL = str(repoURL) + "/commits/" + str(commit["sha"])
                         res = self.__requester.makeRequest(__requestURL)
                         commitDetail = res.json()
-                        print("current commit sha: " + commitDetail["sha"])
+                        #print("current commit sha: " + commitDetail["sha"])
                         if commitDetail is not None:
 
                             if commitDetail["author"] is not None:
@@ -135,8 +164,6 @@ class GitHubHarvester:
             print("Error while retrieving: " + requestURL)
             print("Status code: "  + res.status_code)
 
-
-
     def __retrieveContributorsOfRepo(self, repoUrl, project_id):
         index = 1
 
@@ -155,7 +182,7 @@ class GitHubHarvester:
                         login = contributor["login"]
                         contributions = contributor["contributions"]
 
-                        print("Adding the user with login: " + login)
+                        #print("Adding the user with login: " + login)
                         if(self.__databaseService.checkIfGithubUserExist(login) is False):
                             # There is no user entry in our DB with this login info so just fetch and insert it
                             self.__retrieveSingleUser(login)
@@ -166,3 +193,12 @@ class GitHubHarvester:
             else: # Request gave an error
                 print("Error while retrieving: " + contributionsURL)
                 print("Status code: "  + result.status_code)
+
+    def __buildTimeParameterString(self, since_date, until_date):
+        # Let's build time parameters string for requests that accept time intervals as parameters
+        time_param = ""
+        if since_date is not None:
+            time_param = time_param + "&since=" + since_date
+        if until_date is not None:
+            time_param = time_param + "&until=" + until_date
+        return time_param

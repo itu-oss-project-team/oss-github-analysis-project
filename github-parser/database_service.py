@@ -114,7 +114,7 @@ class DatabaseService:
             `created_at`, `additions`, `deletions`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE url = url """,
             (sha, url, project_id, author_id, committer_id, message, created_at, str(additions), str(deletions))
         )
-        print("Commit with sha: " + sha +" added")
+        #print("Commit with sha: " + sha +" added")
         self.__db.commit()
         self.insertFiles(commit["files"], sha, project_id)
 
@@ -177,11 +177,38 @@ class DatabaseService:
         names = self.__cursor.fetchall()
         return names
 
+    def getAllRepos(self, get_only_ids=False):
+        if get_only_ids:
+            self.__cursor.execute(""" SELECT id FROM repositories""")
+        else:
+            self.__cursor.execute(""" SELECT * FROM repositories""")
+        self.__db.commit()
+        repos = self.__cursor.fetchall()
+        return repos
+
+    def getCommitsOfRepo(self, repo_id, get_only_shas=False):
+        if get_only_shas:
+            self.__cursor.execute(""" SELECT sha FROM commits WHERE project_id = %s""", repo_id)
+        else:
+            self.__cursor.execute(""" SELECT * FROM commits WHERE project_id = %s""", repo_id)
+        self.__db.commit()
+        files = self.__cursor.fetchall()
+        return files
+
     def getOwnerLoginbyId(self,id):
         self.__cursor.execute(""" SELECT login from users where github_user_id = %s""",(id))
         self.__db.commit()
         login = self.__cursor.fetchone()
         return login
+
+    def getFilesOfCommit(self, commit_sha, get_only_shas=False):
+        if get_only_shas:
+            self.__cursor.execute(""" SELECT sha FROM filechanges WHERE commit_sha = %s""", commit_sha)
+        else:
+            self.__cursor.execute(""" SELECT * FROM filechanges WHERE commit_sha = %s""", commit_sha)
+        self.__db.commit()
+        files = self.__cursor.fetchall()
+        return files
 
     def checkIfGithubUserExist(self, login):
         self.__cursor.execute(""" SELECT login from users where login = %s""", (login))
