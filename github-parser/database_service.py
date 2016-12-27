@@ -3,6 +3,7 @@
 
 import pymysql
 import dateutil.parser
+import dateutil.rrule
 # A service class to make DB queries such as inserting new commits etc.
 class DatabaseService:
 
@@ -14,6 +15,10 @@ class DatabaseService:
                              charset='utf8mb4', use_unicode=True)
 
         self.__cursor = self.__db.cursor()
+
+        self.__file_sha_null_counter = 0;
+        self.__commit_sha_null_counter = 0;
+
 
     def insertProject(self, item):
         id = item["id"]
@@ -88,6 +93,11 @@ class DatabaseService:
 
     def insertCommit(self, commit, project_id):
         sha = commit["sha"]
+        if sha is None:
+            sha = "null" + str(self.__commit_sha_null_counter);
+            print("Project: " + str(project_id) + " commit: " + str(commit_sha) + " has null commit sha. counter: " + str(self.__commit_sha_null_counter))
+            self.__commit_sha_null_counter += 1;
+
         url = commit["url"]
 
         if commit["author"] is not None:
@@ -124,7 +134,9 @@ class DatabaseService:
         for file in files:
             sha = file["sha"]
             if sha is None:
-                sha = "null"
+                sha = "null" + str(self.__file_sha_null_counter);
+                print("Project: " + str(project_id) + " commit: " + str(commit_sha) + " has null file sha. counter: " + str(self.__file_sha_null_counter))
+                self.__file_sha_null_counter += 1;
             filename = file["filename"]
             status = file["status"]
             additions = file["additions"]
@@ -171,11 +183,11 @@ class DatabaseService:
             # Repor does not new enough
             return False
 
-    def getAllRepoNames(self):
-        self.__cursor.execute(""" SELECT owner_id,name from repositories""")
+    def getAllRepos(self):
+        self.__cursor.execute(""" SELECT * from repositories""")
         self.__db.commit()
-        names = self.__cursor.fetchall()
-        return names
+        repos = self.__cursor.fetchall()
+        return repos
 
     def getAllRepos(self, get_only_ids=False):
         if get_only_ids:
@@ -253,3 +265,51 @@ class DatabaseService:
     def insertContribution(self,userid, repoid,contributions):
        self.__cursor.execute(""" INSERT INTO contributings (repository_id,user_id,contributions)values (%s,%s,%s)""",(repoid,userid,contributions))
        self.__db.commit()
+
+    def findNumberOfCommitsAndContributorsOfProjectMonthly(self, project_id, start_date, end_date):
+        date_list = list(dateutil.rrule.rrule(dateutil.rrule.MONTHLY, dtstart=start_date, until=end_date))
+        for i in range(0, len(date_list)-1, 1):
+            s_date = date_list[i]
+            e_date = date_list[i+1]
+            self.__cursor.execute(""" select count(*) from commits where project_id = %s and (created_at BETWEEN %s and %s) """,
+                                  (project_id, s_date, e_date))
+            self.__db.commit()
+            no_of_commits = self.__cursor.fetchone()[0]
+
+            self.__cursor.execute(""" select count(*) from (
+                select count(*), author_id from commits where project_id = %s and (created_at BETWEEN %s and %s) group by author_id
+                ) contributorsCount """, (project_id, s_date, e_date))
+            self.__db.commit()
+            no_of_contributors = self.__cursor.fetchone()[0]
+
+            self.__cursor.execute(""" select count(*) from (
+                select count(*), filename, changes from filechanges join commits on commit_sha = commits.sha
+                where filechanges.project_id = %s and (created_at BETWEEN %s and %s) group by filename) filesCount """,
+                (project_id, s_date, e_date))
+            self.__db.commit()
+            no_of_changed_files = self.__cursor.fetchone()[0]
+
+            self.__cursor.execute(""" select id from projectstats
+                where project_id = %s and
+                start_date = %s and
+                end_date = %s """, (project_id, s_date, e_date))
+            self.__db.commit()
+            id = self.__cursor.fetchone()
+
+            if id is not None:
+                id = id[0]
+                self.__cursor.execute(""" INSERT INTO projectstats
+                    (id, project_id, start_date, end_date, no_of_commits, no_of_contributors, no_of_changed_files)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                    no_of_commits = VALUES(no_of_commits), no_of_contributors = VALUES(no_of_contributors),
+                    no_of_changed_files = VALUES(no_of_changed_files) """,
+                    (id, project_id, s_date, e_date, no_of_commits, no_of_contributors, no_of_changed_files))
+                self.__db.commit()
+            else:
+                self.__cursor.execute(""" INSERT INTO projectstats(project_id, start_date, end_date, no_of_commits,
+                    no_of_contributors, no_of_changed_files) VALUES (%s, %s, %s, %s, %s, %s) """,
+                    (project_id, s_date, e_date, no_of_commits, no_of_contributors, no_of_changed_files))
+                self.__db.commit()
+
+        return

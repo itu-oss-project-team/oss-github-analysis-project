@@ -81,9 +81,40 @@ def initDB(db):
         -- Table: filesofproject
         CREATE TABLE filesofproject (
             project_id int NOT NULL,
-            filename varchar(191) NOT NULL,
-            CONSTRAINT file_name PRIMARY KEY (filename)
+            filename varchar(191) NOT NULL
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
+
+        CREATE  UNIQUE INDEX filesofproject_idx_1 ON filesofproject (project_id,filename);
+
+        -- Table: issues
+        CREATE TABLE issues (
+            id int NOT NULL,
+            url varchar(191) NOT NULL,
+            number int NULL,
+            title text NULL,
+            repository_id int NOT NULL,
+            reporter_id int NOT NULL,
+            assignee_id int NULL,
+            state varchar(191) NULL,
+            comments int NULL,
+            created_at timestamp NULL,
+            updated_at timestamp NULL,
+            closed_at int NULL,
+            CONSTRAINT issues_pk PRIMARY KEY (id)
+        ) ENGINE InnoDB CHARACTER SET utf8mb4;
+
+        -- Table: projectstats
+        CREATE TABLE projectstats (
+            id int NOT NULL AUTO_INCREMENT,
+            project_id int NOT NULL,
+            start_date timestamp NULL,
+            end_date timestamp NULL,
+            no_of_commits int NULL,
+            no_of_contributors int NULL,
+            no_of_changed_files int NULL,
+            CONSTRAINT projectstats_pk PRIMARY KEY (id)
+        ) ENGINE InnoDB CHARACTER SET utf8mb4;
+
 
         -- Table: repositories
         CREATE TABLE repositories (
@@ -155,11 +186,27 @@ def initDB(db):
             ON DELETE CASCADE
             ON UPDATE CASCADE;
 
+        -- Reference: fk_projectstats_repositories (table: projectstats)
+        ALTER TABLE projectstats ADD CONSTRAINT fk_projectstats_repositories FOREIGN KEY fk_projectstats_repositories (project_id)
+            REFERENCES repositories (id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE;
+
+
         -- Reference: fk_repositories_users (table: repositories)
         ALTER TABLE repositories ADD CONSTRAINT fk_repositories_users FOREIGN KEY fk_repositories_users (owner_id)
             REFERENCES users (user_id)
             ON DELETE CASCADE
             ON UPDATE CASCADE;
+
+        -- Reference: issues_repositories (table: issues)
+        ALTER TABLE issues ADD CONSTRAINT issues_repositories FOREIGN KEY issues_repositories (repository_id)
+            REFERENCES repositories (id);
+
+        -- Reference: issues_users (table: issues)
+        ALTER TABLE issues ADD CONSTRAINT issues_users FOREIGN KEY issues_users (assignee_id)
+            REFERENCES users (user_id);
+
     """)
 
 
