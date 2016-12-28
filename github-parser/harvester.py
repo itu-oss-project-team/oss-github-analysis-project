@@ -3,7 +3,9 @@
 from requester import GitHubRequester
 from database_service import DatabaseService
 from datetime import datetime
+from db_coloumn_constants import Coloumns
 import time
+
 
 # End point for harvesting GitHub API
 class GitHubHarvester:
@@ -54,7 +56,9 @@ class GitHubHarvester:
         time_param = self.__buildTimeParameterString(since_date, until_date)
 
         repos = self.__databaseService.getRepoUrls()
-        for repo_url, repo_id in repos:
+        for repo in repos:
+            repo_url = repo[Coloumns.Repo.url]
+            repo_id = repo[Coloumns.Repo.id]
             if not force_fetch and self.__databaseService.checkIfRepoFilled(repo_id):
                 # Repo filled before so i can skip it now
                 print("Repo already fetched: " + repo_url)

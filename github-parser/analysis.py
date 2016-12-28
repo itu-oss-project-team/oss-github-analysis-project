@@ -12,11 +12,11 @@ class Analysis:
     def setMonthlyProjectStats(self):
         start_date = dateutil.parser.parse("2013-01-01 00:00:00")
         end_date = dateutil.parser.parse("2017-01-01 00:00:00")
-        repos = self.__databaseService.getAllRepos()
+        repos = self.__databaseService.getAllRepos(get_only_ids=True)
         print(repos)
         for repo in repos:
             print(repo)
-            self.__databaseService.findNumberOfCommitsAndContributorsOfProjectMonthly(repo[0], start_date, end_date)
+            self.__databaseService.findNumberOfCommitsAndContributorsOfProjectMonthly(repo, start_date, end_date)
 
         return
 
