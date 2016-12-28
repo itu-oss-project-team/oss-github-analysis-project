@@ -27,7 +27,7 @@ def clearDB(db):
     cursor = db.cursor()
     cursor.execute("""
             DROP TABLE IF EXISTS
-            `contributings`, `filechanges`, `commits`, `filesofproject`, `repositories`, `users`;
+            `projectstats`, `contributings`, `filechanges`, `commits`, `filesofproject`,`issues`, `repositories`, `users`;
     """)
 
     db.commit()
