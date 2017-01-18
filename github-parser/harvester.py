@@ -29,7 +29,7 @@ class GitHubHarvester:
             self.__databaseService.insertProject(repo)
         else:  # Request gave an error
             print("Error while retrieving: " + repo_url)
-            print("Status code: " + res.status_code)
+            print("Status code: " + str(res.status_code))
 
         if not force_fetch and self.__databaseService.checkIfRepoFilled(repo_id):
             # Repo filled before so i can skip it now
@@ -113,7 +113,7 @@ class GitHubHarvester:
             self.__databaseService.insertGithubUser(userData)
         else:  # Request gave an error
             print("Error while retriving: " + userURL)
-            print("Status code: " + res.status_code)
+            print("Status code: " + str(res.status_code))
 
         return
 
@@ -163,7 +163,7 @@ class GitHubHarvester:
 
         else: # Request gave an error
             print("Error while retrieving: " + requestURL)
-            print("Status code: "  + res.status_code)
+            print("Status code: "  + str(res.status_code))
 
     def __retrieveContributorsOfRepo(self, repoUrl, project_id):
         index = 1
@@ -193,7 +193,7 @@ class GitHubHarvester:
 
             else: # Request gave an error
                 print("Error while retrieving: " + contributionsURL)
-                print("Status code: "  + result.status_code)
+                print("Status code: "  + str(result.status_code))
 
     def __buildTimeParameterString(self, since_date, until_date):
         # Let's build time parameters string for requests that accept time intervals as parameters

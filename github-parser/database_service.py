@@ -289,6 +289,10 @@ class DatabaseService:
             self.__db.commit()
             no_of_changed_files = self.__cursor.fetchone()[0]
 
+            self.__cursor.execute(""" SELECT count(*) FROM filechanges JOIN commits ON commit_sha = commits.sha
+            WHERE filechanges.project_id = %s AND (created_at BETWEEN %s AND %s) """, (project_id, s_date, e_date))
+            no_of_file_changes = self.__cursor.fetchone()[0]
+
             self.__cursor.execute(""" select id from projectstats
                 where project_id = %s and
                 start_date = %s and
@@ -299,17 +303,17 @@ class DatabaseService:
             if id is not None:
                 id = id[0]
                 self.__cursor.execute(""" INSERT INTO projectstats
-                    (id, project_id, start_date, end_date, no_of_commits, no_of_contributors, no_of_changed_files)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    (id, project_id, start_date, end_date, no_of_commits, no_of_contributors, no_of_changed_files, no_of_file_changes)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
                     no_of_commits = VALUES(no_of_commits), no_of_contributors = VALUES(no_of_contributors),
-                    no_of_changed_files = VALUES(no_of_changed_files) """,
-                    (id, project_id, s_date, e_date, no_of_commits, no_of_contributors, no_of_changed_files))
+                    no_of_changed_files = VALUES(no_of_changed_files), no_of_file_changes = VALUES(no_of_file_changes) """,
+                    (id, project_id, s_date, e_date, no_of_commits, no_of_contributors, no_of_changed_files, no_of_file_changes))
                 self.__db.commit()
             else:
                 self.__cursor.execute(""" INSERT INTO projectstats(project_id, start_date, end_date, no_of_commits,
-                    no_of_contributors, no_of_changed_files) VALUES (%s, %s, %s, %s, %s, %s) """,
-                    (project_id, s_date, e_date, no_of_commits, no_of_contributors, no_of_changed_files))
+                    no_of_contributors, no_of_changed_files, no_of_file_changes) VALUES (%s, %s, %s, %s, %s, %s, %s) """,
+                    (project_id, s_date, e_date, no_of_commits, no_of_contributors, no_of_changed_files, no_of_file_changes))
                 self.__db.commit()
 
         return

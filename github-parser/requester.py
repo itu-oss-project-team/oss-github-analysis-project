@@ -14,7 +14,7 @@ class GitHubRequester:
 
         if int(self.__RateLimit_Remaining) <= 1 and self.__tokenOrder <= 0:
             self.__tokenOrder = self.__tokenOrder + 1
-            print("X-Rate limit remaining: " + self.__RateLimit_Remaining)
+            print("X-Rate limit remaining: " + str(self.__RateLimit_Remaining))
             print("Token order is incremented to " + str(self.__tokenOrder))
 
         token = self.__tokens[int(self.__tokenOrder)]
