@@ -379,7 +379,7 @@ class DatabaseService:
                     no_of_commits = VALUES(no_of_commits), first_commit_date = VALUES(first_commit_date),
                     last_commit_date = VALUES(last_commit_date), no_of_developers = VALUES(no_of_developers),
                     top_developer_id = VALUES(top_developer_id) """,
-                    (id, project_id, fileDetails["full_name"], fileDetails["filename"], no_of_commits, first_commit_date, last_commit_date,
+                    (id["id"], project_id, fileDetails["full_name"], fileDetails["filename"], no_of_commits, first_commit_date, last_commit_date,
                      no_of_developers, top_developer_id))
                 self.__db.commit()
             else:
