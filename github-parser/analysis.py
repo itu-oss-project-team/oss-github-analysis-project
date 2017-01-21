@@ -17,16 +17,22 @@ class Analysis:
         for repo in repos:
             self.__databaseService.findNumberOfCommitsAndContributorsOfProjectMonthly(repo, start_date, end_date)
 
-
         return
 
+    def setFileStats(self):
+        repos = self.__databaseService.getAllRepos(get_only_ids=True)
+        for repo in repos:
+            self.__databaseService.findNumberOfCommitsAndDevelopersOfRepositoryFiles(repo)
+
+        return
 
 def main():
     with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config_secret.yaml'), 'r') as ymlfile:
         secret_config = yaml.load(ymlfile)
 
     analysis = Analysis(secret_config)
-    analysis.setMonthlyProjectStats()
+    #analysis.setMonthlyProjectStats()
+    analysis.setFileStats()
 
 main()
 

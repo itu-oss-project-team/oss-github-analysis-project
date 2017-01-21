@@ -19,9 +19,6 @@ class DatabaseService:
         self.__cursor = self.__db.cursor()
         self.__dictCursor = self.__db.cursor(pymysql.cursors.DictCursor)
 
-        self.__file_sha_null_counter = 0
-        self.__commit_sha_null_counter = 0
-
     def insertProject(self, item):
         id = item["id"]
         url = item["url"].encode('utf-8', 'ignore')
@@ -74,6 +71,7 @@ class DatabaseService:
 
         self.__db.commit()
 
+    #method used for inserting Non GitHub users.
     def insertUser(self, userData):
 
         userName = userData["name"]
@@ -88,9 +86,7 @@ class DatabaseService:
     def insertCommit(self, commit, project_id):
         sha = commit["sha"]
         if sha is None:
-            sha = "null" + str(self.__commit_sha_null_counter);
-            print("Project: " + str(project_id) + " commit: " + str(commit_sha) + " has null commit sha. counter: " + str(self.__commit_sha_null_counter))
-            self.__commit_sha_null_counter += 1;
+            return
 
         url = commit["url"]
 
@@ -127,10 +123,10 @@ class DatabaseService:
     def insertFiles(self, files, commit_sha, project_id):
         for file in files:
             sha = file["sha"]
+
             if sha is None:
-                sha = "null" + str(self.__file_sha_null_counter);
-                print("Project: " + str(project_id) + " commit: " + str(commit_sha) + " has null file sha. counter: " + str(self.__file_sha_null_counter))
-                self.__file_sha_null_counter += 1;
+                continue
+
             filename = file["filename"]
             status = file["status"]
             additions = file["additions"]
@@ -284,6 +280,7 @@ class DatabaseService:
         self.__dictCursor.execute(""" UPDATE repositories SET filled_at = %s WHERE id = %s""", (filled_time, repo_id))
         self.__db.commit()
 
+    #this method iterates monthly and finds number of commits, contributors, file changes and unique files of a repository.
     def findNumberOfCommitsAndContributorsOfProjectMonthly(self, project_id, start_date, end_date):
         date_list = list(dateutil.rrule.rrule(dateutil.rrule.MONTHLY, dtstart=start_date, until=end_date))
         for i in range(0, len(date_list)-1, 1):
@@ -333,5 +330,44 @@ class DatabaseService:
                     no_of_contributors, no_of_changed_files, no_of_file_changes) VALUES (%s, %s, %s, %s, %s, %s, %s) """,
                     (project_id, s_date, e_date, no_of_commits, no_of_contributors, no_of_changed_files, no_of_file_changes))
                 self.__db.commit()
+
+        return
+
+    #this method finds number of commits, first-last commit dates, number of developers and top developer id in a file.
+    def findNumberOfCommitsAndDevelopersOfRepositoryFiles(self, project_id):
+        self.__dictCursor.execute(""" SELECT full_name, filename FROM filesofproject
+            left join repositories on filesofproject.project_id = repositories.id where project_id = %s""", project_id)
+
+        fileList = self.__dictCursor.fetchall()
+
+        for fileDetails in fileList:
+            print("*** " + fileDetails["filename"] + " ***")
+            self.__dictCursor.execute(""" SELECT filechanges.project_id, filename, created_at FROM filechanges
+                join commits on commits.sha = filechanges.commit_sha
+                where filechanges.project_id = %s and filename = %s
+                order by created_at ASC """, (project_id, fileDetails["filename"]))
+            self.__db.commit()
+
+            commit_based_result = self.__dictCursor.fetchall()
+            if not commit_based_result:
+                continue
+
+            no_of_commits = len(commit_based_result)
+            first_commit_date = commit_based_result[0]["created_at"]
+            last_commit_date = commit_based_result[no_of_commits-1]["created_at"]
+
+            self.__dictCursor.execute(""" SELECT count(*), filechanges.project_id, filename, author_id FROM filechanges
+                join commits on commits.sha = filechanges.commit_sha
+                where filechanges.project_id = %s and filename = %s
+                group by author_id order by count(*) DESC""", (project_id, fileDetails["filename"]))
+            self.__db.commit()
+
+            developer_based_result = self.__dictCursor.fetchall()
+            top_developer_id = developer_based_result[0]["author_id"]
+            no_of_developers = len(developer_based_result)
+
+            print("File: " + fileDetails["full_name"] + "/" + fileDetails["filename"] + " no_of_commits: " + str(no_of_commits)
+                  + " first: " + str(first_commit_date) + " last: " + str(last_commit_date) + " top_dev_id " + str(top_developer_id)
+                  + " no_of_devs: " + str(no_of_developers))
 
         return
