@@ -366,6 +366,30 @@ class DatabaseService:
             top_developer_id = developer_based_result[0]["author_id"]
             no_of_developers = len(developer_based_result)
 
+            self.__dictCursor.execute(""" SELECT id from filestats
+                WHERE project_full_name = %s and filename = %s """, (fileDetails["full_name"], fileDetails["filename"]))
+            self.__db.commit()
+            id = self.__dictCursor.fetchone()
+
+            if id:
+                self.__dictCursor.execute(""" INSERT INTO
+                    filestats(id, project_id, project_full_name, filename, no_of_commits, first_commit_date, last_commit_date,
+                    no_of_developers, top_developer_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                    no_of_commits = VALUES(no_of_commits), first_commit_date = VALUES(first_commit_date),
+                    last_commit_date = VALUES(last_commit_date), no_of_developers = VALUES(no_of_developers),
+                    top_developer_id = VALUES(top_developer_id) """,
+                    (id, project_id, fileDetails["full_name"], fileDetails["filename"], no_of_commits, first_commit_date, last_commit_date,
+                     no_of_developers, top_developer_id))
+                self.__db.commit()
+            else:
+                self.__dictCursor.execute(""" INSERT INTO
+                    filestats(project_id, project_full_name, filename, no_of_commits, first_commit_date, last_commit_date,
+                    no_of_developers, top_developer_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s) """,
+                    (project_id, fileDetails["full_name"], fileDetails["filename"], no_of_commits, first_commit_date, last_commit_date,
+                     no_of_developers, top_developer_id))
+                self.__db.commit()
+
             print("File: " + fileDetails["full_name"] + "/" + fileDetails["filename"] + " no_of_commits: " + str(no_of_commits)
                   + " first: " + str(first_commit_date) + " last: " + str(last_commit_date) + " top_dev_id " + str(top_developer_id)
                   + " no_of_devs: " + str(no_of_developers))
