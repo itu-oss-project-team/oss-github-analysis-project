@@ -27,7 +27,7 @@ def clearDB(db):
     cursor = db.cursor()
     cursor.execute("""
             DROP TABLE IF EXISTS
-            `projectstats`, `contributings`, `filechanges`, `commits`, `filesofproject`,`issues`, `repositories`, `users`;
+            `filestats`, `projectstats`, `contributings`, `filechanges`, `commits`, `filesofproject`,`issues`, `repositories`, `users`;
     """)
 
     db.commit()
@@ -100,7 +100,7 @@ def initDB(db):
             CONSTRAINT filestats_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
-        CREATE  UNIQUE INDEX filestats_idx_1 ON filestats (project_full_name,filename);
+        CREATE  UNIQUE INDEX filestats_idx_1 ON filestats (project_full_name);
 
         -- Table: issues
         CREATE TABLE issues (
@@ -176,18 +176,6 @@ def initDB(db):
         ALTER TABLE contributings ADD CONSTRAINT contributings_users FOREIGN KEY contributings_users (user_id)
             REFERENCES users (user_id);
 
-        -- Reference: filestats_filechanges (table: filestats)
-        ALTER TABLE filestats ADD CONSTRAINT filestats_filechanges FOREIGN KEY filestats_filechanges (filename)
-            REFERENCES filechanges (filename);
-
-        -- Reference: filestats_repositories (table: filestats)
-        ALTER TABLE filestats ADD CONSTRAINT filestats_repositories FOREIGN KEY filestats_repositories (project_id,project_full_name)
-            REFERENCES repositories (id,full_name);
-
-        -- Reference: filestats_users (table: filestats)
-        ALTER TABLE filestats ADD CONSTRAINT filestats_users FOREIGN KEY filestats_users (top_developer_id)
-            REFERENCES users (user_id);
-
         -- Reference: fk_commits_authors (table: commits)
         ALTER TABLE commits ADD CONSTRAINT fk_commits_authors FOREIGN KEY fk_commits_authors (committer_id)
             REFERENCES users (user_id);
@@ -214,6 +202,14 @@ def initDB(db):
             ON DELETE CASCADE
             ON UPDATE CASCADE;
 
+        -- Reference: fk_filestats_repositories (table: filestats)
+        ALTER TABLE filestats ADD CONSTRAINT fk_filestats_repositories FOREIGN KEY fk_filestats_repositories (project_id)
+            REFERENCES repositories (id);
+
+        -- Reference: fk_filestats_users (table: filestats)
+        ALTER TABLE filestats ADD CONSTRAINT fk_filestats_users FOREIGN KEY fk_filestats_users (top_developer_id)
+            REFERENCES users (user_id);
+
         -- Reference: fk_projectstats_repositories (table: projectstats)
         ALTER TABLE projectstats ADD CONSTRAINT fk_projectstats_repositories FOREIGN KEY fk_projectstats_repositories (project_id)
             REFERENCES repositories (id)
@@ -235,8 +231,6 @@ def initDB(db):
             REFERENCES users (user_id);
 
     """)
-
-
 
     db.commit()
 
