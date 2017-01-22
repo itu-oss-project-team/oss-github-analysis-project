@@ -214,7 +214,7 @@ class DatabaseService:
         else:
             self.__dictCursor.execute(""" SELECT * FROM commits WHERE project_id = %s""", repo_id)
             self.__db.commit()
-            commits = self.__dict_cursor.fetchall()
+            commits = self.__dictCursor.fetchall()
         return commits
 
     '''
