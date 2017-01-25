@@ -218,6 +218,24 @@ class DatabaseService:
         return commits
 
     '''
+        Get all files of a specified repo in DB
+        if get_only_file_names is true it will return a list of full file paths
+        else it will return repo files as a dict
+    '''
+    def getFilesOfRepo(self, repo_id, get_only_file_names=False):
+        if get_only_file_names:
+            self.__cursor.execute(""" SELECT filename FROM filesofproject WHERE project_id = %s""", repo_id)
+            self.__db.commit()
+            files = self.__cursor.fetchall()
+            # Take only file names from result
+            files = [file[0] for file in files]
+        else:
+            self.__dictCursor.execute(""" SELECT * FROM filesofproject WHERE project_id = %s""", repo_id)
+            self.__db.commit()
+            files = self.__cursor.fetchall()
+        return files
+
+    '''
         Get all files of a specified commit in DB
         if get_only_shas is true it will return a list of file change shas
         else it will return file changes as a dict
@@ -233,7 +251,19 @@ class DatabaseService:
             self.__db.commit()
             files = self.__dictCursor.fetchall()
         return files
-    
+
+    def getCommitsOfFile(self, repo_id, file_name, get_only_shas=False):
+        if get_only_shas:
+            self.__cursor.execute("""SELECT DISTINCT commit_sha FROM filechanges WHERE project_id = %s AND filename = %s""", (repo_id, file_name))
+            self.__db.commit()
+            commits = self.__cursor.fetchall()
+            commits = [commit[0] for commit in commits]
+        else:
+            self.__dictCursor.execute("""SELECT * FROM commits WHERE sha IN (SELECT DISTINCT commit_sha FROM filechanges WHERE project_id = %s AND filename = %s)""", (repo_id, file_name))
+            commits = self.__dictCursor.fetchall()
+        return commits
+
+
     ####Commiter_id or author_id???
     def getContributorOfCommit (self,commit_sha):
             self.__dictCursor.execute(""" SELECT author_id FROM commits WHERE sha = %s""", commit_sha)

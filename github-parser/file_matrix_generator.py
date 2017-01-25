@@ -39,3 +39,4 @@ class FileMatrixGenerator:
             file_matrix[file_path_1][file_path_2] += 1
         else:
             file_matrix[file_path_1][file_path_2] = 1
+
