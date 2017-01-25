@@ -100,7 +100,7 @@ def initDB(db):
             CONSTRAINT filestats_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
-        CREATE  UNIQUE INDEX filestats_idx_1 ON filestats (project_full_name);
+        CREATE  UNIQUE INDEX filestats_idx_1 ON filestats (project_id,filename);
 
         -- Table: issues
         CREATE TABLE issues (
