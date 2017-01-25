@@ -233,7 +233,21 @@ class DatabaseService:
             self.__db.commit()
             files = self.__dictCursor.fetchall()
         return files
-
+    
+    ####Commiter_id or author_id???
+    def getContributorOfCommit (self,commit_sha):
+            self.__dictCursor.execute(""" SELECT author_id FROM commits WHERE sha = %s""", commit_sha)
+            self.__db.commit()
+            committer_id = self.__dictCursor.fetchone()
+            return committer_id
+    
+    def checkContributorStatus(self,author_id):
+            self.__dictCursor.execute(""" SELECT is_github_user FROM users WHERE user_id = %s""", author_id)
+            self.__db.commit()
+            is_github_user = self.__dictCursor.fetchone()
+            return is_github_user
+            
+    
     def getOwnerLoginbyId(self, id):
         self.__dictCursor.execute(""" SELECT login from users where github_user_id = %s""", (id))
         self.__db.commit()
