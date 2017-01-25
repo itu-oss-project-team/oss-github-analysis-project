@@ -58,6 +58,9 @@ class GitHubHarvester:
         repos = self.__databaseService.getRepoUrls()
         for repo in repos:
             repo_url = repo[Coloumns.Repo.url]
+            if repo_url == "https://api.github.com/repos/torvalds/linux":
+                continue
+
             repo_id = repo[Coloumns.Repo.id]
             if not force_fetch and self.__databaseService.checkIfRepoFilled(repo_id):
                 # Repo filled before so i can skip it now
