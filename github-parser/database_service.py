@@ -355,7 +355,6 @@ class DatabaseService:
         fileList = self.__dictCursor.fetchall()
 
         for fileDetails in fileList:
-            print("*** " + fileDetails["filename"] + " ***")
             self.__dictCursor.execute(""" SELECT filechanges.project_id, filename, created_at FROM filechanges
                 join commits on commits.sha = filechanges.commit_sha
                 where filechanges.project_id = %s and filename = %s
@@ -403,9 +402,4 @@ class DatabaseService:
                     (project_id, fileDetails["full_name"], fileDetails["filename"], no_of_commits, first_commit_date, last_commit_date,
                      no_of_developers, top_developer_id))
                 self.__db.commit()
-
-            print("File: " + fileDetails["full_name"] + "/" + fileDetails["filename"] + " no_of_commits: " + str(no_of_commits)
-                  + " first: " + str(first_commit_date) + " last: " + str(last_commit_date) + " top_dev_id " + str(top_developer_id)
-                  + " no_of_devs: " + str(no_of_developers))
-
         return
