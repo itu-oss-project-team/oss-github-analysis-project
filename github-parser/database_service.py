@@ -4,6 +4,7 @@ import pymysql
 import dateutil.parser
 import dateutil.rrule
 from db_coloumn_constants import Coloumns
+from _datetime import datetime
 
 
 # A service class to make DB queries such as inserting new commits etc.
@@ -183,12 +184,12 @@ class DatabaseService:
     '''
     def getAllRepos(self, get_only_ids=False):
         if get_only_ids:
-            self.__cursor.execute(""" SELECT id FROM repositories""")
+            self.__cursor.execute(""" SELECT id FROM repositories ORDER BY stargazers_count ASC""")
             self.__db.commit()
             repos = self.__cursor.fetchall()
             repos = [repo[0] for repo in repos]
         else:
-            self.__dictCursor.execute(""" SELECT * FROM repositories""")
+            self.__dictCursor.execute(""" SELECT * FROM repositories ORDER BY stargazers_count ASC""")
             self.__db.commit()
             repos = self.__dictCursor.fetchall()
         return repos
@@ -270,14 +271,14 @@ class DatabaseService:
             self.__db.commit()
             committer_id = self.__dictCursor.fetchone()
             return committer_id
-    
+
     def checkContributorStatus(self,author_id):
             self.__dictCursor.execute(""" SELECT is_github_user FROM users WHERE user_id = %s""", author_id)
             self.__db.commit()
             is_github_user = self.__dictCursor.fetchone()
             return is_github_user
-            
-    
+
+
     def getOwnerLoginbyId(self, id):
         self.__dictCursor.execute(""" SELECT login from users where github_user_id = %s""", (id))
         self.__db.commit()
@@ -385,7 +386,7 @@ class DatabaseService:
         fileList = self.__dictCursor.fetchall()
 
         for fileDetails in fileList:
-            self.__dictCursor.execute(""" SELECT filechanges.project_id, filename, created_at FROM filechanges
+            self.__dictCursor.execute(""" SELECT created_at FROM filechanges
                 join commits on commits.sha = filechanges.commit_sha
                 where filechanges.project_id = %s and filename = %s
                 order by created_at ASC """, (project_id, fileDetails["filename"]))
@@ -399,7 +400,16 @@ class DatabaseService:
             first_commit_date = commit_based_result[0]["created_at"]
             last_commit_date = commit_based_result[no_of_commits-1]["created_at"]
 
-            self.__dictCursor.execute(""" SELECT count(*), filechanges.project_id, filename, author_id FROM filechanges
+            total_time_between_two_commits = 0
+            #calculate commit frequency: total time difference between two commits / total number of commits
+            for i in range(1, no_of_commits):
+                time_difference = commit_based_result[i]["created_at"] - commit_based_result[i-1]["created_at"]
+                #print("Time diff: " ,time_difference, time_difference.days + time_difference.seconds /86400)
+                total_time_between_two_commits += time_difference.days + time_difference.seconds / 86400 #86400 seconds=1 day
+
+            commit_freq = total_time_between_two_commits / no_of_commits
+
+            self.__dictCursor.execute(""" SELECT count(*), author_id FROM filechanges
                 join commits on commits.sha = filechanges.commit_sha
                 where filechanges.project_id = %s and filename = %s
                 group by author_id order by count(*) DESC""", (project_id, fileDetails["filename"]))
@@ -417,19 +427,19 @@ class DatabaseService:
             if id:
                 self.__dictCursor.execute(""" INSERT INTO
                     filestats(id, project_id, project_full_name, filename, no_of_commits, first_commit_date, last_commit_date,
-                    no_of_developers, top_developer_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    commit_frequency, no_of_developers, top_developer_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
                     no_of_commits = VALUES(no_of_commits), first_commit_date = VALUES(first_commit_date),
-                    last_commit_date = VALUES(last_commit_date), no_of_developers = VALUES(no_of_developers),
-                    top_developer_id = VALUES(top_developer_id) """,
+                    last_commit_date = VALUES(last_commit_date), commit_frequency = VALUES(commit_frequency),
+                    no_of_developers = VALUES(no_of_developers), top_developer_id = VALUES(top_developer_id) """,
                     (id["id"], project_id, fileDetails["full_name"], fileDetails["filename"], no_of_commits, first_commit_date, last_commit_date,
-                     no_of_developers, top_developer_id))
+                     commit_freq, no_of_developers, top_developer_id))
                 self.__db.commit()
             else:
                 self.__dictCursor.execute(""" INSERT INTO
                     filestats(project_id, project_full_name, filename, no_of_commits, first_commit_date, last_commit_date,
-                    no_of_developers, top_developer_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s) """,
+                    commit_frequency, no_of_developers, top_developer_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s) """,
                     (project_id, fileDetails["full_name"], fileDetails["filename"], no_of_commits, first_commit_date, last_commit_date,
-                     no_of_developers, top_developer_id))
+                     commit_freq, no_of_developers, top_developer_id))
                 self.__db.commit()
         return

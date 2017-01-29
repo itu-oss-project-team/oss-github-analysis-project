@@ -95,6 +95,7 @@ def initDB(db):
             no_of_commits int NULL,
             first_commit_date timestamp NULL,
             last_commit_date timestamp NULL,
+            commit_frequency float NULL,
             no_of_developers int NULL,
             top_developer_id int NULL,
             CONSTRAINT filestats_pk PRIMARY KEY (id)

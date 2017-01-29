@@ -76,7 +76,7 @@ def main():
     tfidf.printValues(bugfix_commits)
 
     print("\nADD NEW FEATURE COMMITS\n")
-    add_commits = tfidf.tf_idf(["add", "added", "impelement", "implemented", "feat", "feature"], 0.0)
+    add_commits = tfidf.tf_idf(["add", "added", "implement", "implemented", "feat", "feature"], 0.0)
     tfidf.printValues(add_commits)
 
     print("\nREMOVE COMMITS\n")

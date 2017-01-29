@@ -10,7 +10,7 @@ class Analysis:
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
     def setMonthlyProjectStats(self, repo_id):
-        start_date = dateutil.parser.parse("2013-01-01 00:00:00")
+        start_date = dateutil.parser.parse("2016-01-01 00:00:00")
         end_date = dateutil.parser.parse("2017-02-01 00:00:00")
 
         self.__databaseService.findNumberOfCommitsAndContributorsOfProjectMonthly(repo_id, start_date, end_date)
@@ -34,7 +34,7 @@ def main():
     for repo in repos:
         analysis.setMonthlyProjectStats(repo)
         analysis.setFileStats(repo)
-
+        print("Repo " + str(repo) + " is done.")
     print("Monthly project stats and file stats analyses are done.")
     return
 
