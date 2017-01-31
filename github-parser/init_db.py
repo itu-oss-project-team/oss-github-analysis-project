@@ -97,7 +97,7 @@ def initDB(db):
             id int NOT NULL AUTO_INCREMENT,
             repo_id int NOT NULL,
             project_full_name varchar(191) NOT NULL,
-            filename varchar(191) NOT NULL,
+            file_path varchar(191) NOT NULL,
             no_of_commits int NULL,
             first_commit_date timestamp NULL,
             last_commit_date timestamp NULL,
@@ -107,7 +107,7 @@ def initDB(db):
             CONSTRAINT filestats_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
-        CREATE  UNIQUE INDEX filestats_idx_1 ON filestats (repo_id,filename);
+        CREATE  UNIQUE INDEX filestats_idx_1 ON filestats (repo_id,file_path);
 
         -- Table: issues
         CREATE TABLE issues (
@@ -242,7 +242,6 @@ def initDB(db):
             REFERENCES users (user_id);
 
         -- End of file.
-
     """)
 
     db.commit()
