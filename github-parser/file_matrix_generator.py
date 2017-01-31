@@ -1,4 +1,5 @@
 from database_service import DatabaseService
+from db_coloumn_constants import Coloumns
 
 class FileMatrixGenerator:
 
@@ -13,7 +14,7 @@ class FileMatrixGenerator:
         # For every commit in repo
         for commit_sha in commits:
             files = self.__databaseService.getFilesChangesOfCommit(commit_sha)
-            commit_files = [file['filename'] for file in files]
+            commit_files = [file[Coloumns.FileChanges.path] for file in files]
             repo_files.update(commit_files)
             for file_path_1 in commit_files:
                 for file_path_2 in commit_files:

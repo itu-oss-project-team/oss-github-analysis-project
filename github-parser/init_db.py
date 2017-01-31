@@ -39,9 +39,10 @@ def initDB(db):
         -- tables
         -- Table: commits
         CREATE TABLE commits (
-            sha varchar(191) NOT NULL,
+            id bigint NOT NULL AUTO_INCREMENT,
+            sha varchar(191) NULL,
             url varchar(191) NOT NULL,
-            project_id int NOT NULL,
+            repo_id int NOT NULL,
             author_id int NULL,
             committer_id int NULL,
             message text NULL DEFAULT NULL,
@@ -49,49 +50,54 @@ def initDB(db):
             additions int NULL,
             deletions int NULL,
             UNIQUE INDEX sha (sha),
-            CONSTRAINT commits_pk PRIMARY KEY (sha)
+            CONSTRAINT commits_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
         CREATE INDEX committer_id ON commits (committer_id);
 
-        CREATE INDEX project_id ON commits (project_id);
+        CREATE INDEX project_id ON commits (repo_id);
 
         CREATE INDEX author_id ON commits (author_id);
 
         -- Table: contributings
         CREATE TABLE contributings (
             user_id int NOT NULL,
-            repository_id int NOT NULL,
+            repo_id int NOT NULL,
             contributions int NULL
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
         -- Table: filechanges
         CREATE TABLE filechanges (
+            id bigint NOT NULL AUTO_INCREMENT,
             sha varchar(191) NOT NULL,
-            project_id int NOT NULL,
-            commit_sha varchar(191) NOT NULL,
-            filename varchar(191) NULL,
+            repo_id int NOT NULL,
+            file_path varchar(191) NULL,
             status varchar(191) NULL,
             additions int NULL,
             deletions int NULL,
             changes int NULL,
-            CONSTRAINT filechanges_pk PRIMARY KEY (sha)
+            commit_id bigint NOT NULL,
+            commit_sha varchar(191) NULL,
+            file_id bigint NOT NULL,
+            CONSTRAINT filechanges_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
         -- Table: filesofproject
         CREATE TABLE filesofproject (
-            project_id int NOT NULL,
-            filename varchar(191) NOT NULL
+            id bigint NOT NULL AUTO_INCREMENT,
+            repo_id int NOT NULL,
+            file_path varchar(191) NOT NULL,
+            CONSTRAINT filesofproject_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
-        CREATE  UNIQUE INDEX filesofproject_idx_1 ON filesofproject (project_id,filename);
+        CREATE  UNIQUE INDEX filesofproject_idx_1 ON filesofproject (repo_id,file_path);
 
         -- Table: filestats
         CREATE TABLE filestats (
             id int NOT NULL AUTO_INCREMENT,
-            project_id int NOT NULL,
+            repo_id int NOT NULL,
             project_full_name varchar(191) NOT NULL,
-            filename varchar(191) NOT NULL,
+            file_path varchar(191) NOT NULL,
             no_of_commits int NULL,
             first_commit_date timestamp NULL,
             last_commit_date timestamp NULL,
@@ -101,7 +107,7 @@ def initDB(db):
             CONSTRAINT filestats_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
-        CREATE  UNIQUE INDEX filestats_idx_1 ON filestats (project_id,filename);
+        CREATE  UNIQUE INDEX filestats_idx_1 ON filestats (repo_id,file_path);
 
         -- Table: issues
         CREATE TABLE issues (
@@ -109,7 +115,7 @@ def initDB(db):
             url varchar(191) NOT NULL,
             number int NULL,
             title text NULL,
-            repository_id int NOT NULL,
+            repo_id int NOT NULL,
             reporter_id int NOT NULL,
             assignee_id int NULL,
             state varchar(191) NULL,
@@ -123,7 +129,7 @@ def initDB(db):
         -- Table: projectstats
         CREATE TABLE projectstats (
             id int NOT NULL AUTO_INCREMENT,
-            project_id int NOT NULL,
+            repo_id int NOT NULL,
             start_date timestamp NULL,
             end_date timestamp NULL,
             no_of_commits int NULL,
@@ -170,12 +176,16 @@ def initDB(db):
 
         -- foreign keys
         -- Reference: contributings_repositories (table: contributings)
-        ALTER TABLE contributings ADD CONSTRAINT contributings_repositories FOREIGN KEY contributings_repositories (repository_id)
+        ALTER TABLE contributings ADD CONSTRAINT contributings_repositories FOREIGN KEY contributings_repositories (repo_id)
             REFERENCES repositories (id);
 
         -- Reference: contributings_users (table: contributings)
         ALTER TABLE contributings ADD CONSTRAINT contributings_users FOREIGN KEY contributings_users (user_id)
             REFERENCES users (user_id);
+
+        -- Reference: filechanges_filesofproject (table: filechanges)
+        ALTER TABLE filechanges ADD CONSTRAINT filechanges_filesofproject FOREIGN KEY filechanges_filesofproject (file_id)
+            REFERENCES filesofproject (id);
 
         -- Reference: fk_commits_authors (table: commits)
         ALTER TABLE commits ADD CONSTRAINT fk_commits_authors FOREIGN KEY fk_commits_authors (committer_id)
@@ -186,25 +196,25 @@ def initDB(db):
             REFERENCES users (user_id);
 
         -- Reference: fk_commits_repositories (table: commits)
-        ALTER TABLE commits ADD CONSTRAINT fk_commits_repositories FOREIGN KEY fk_commits_repositories (project_id)
+        ALTER TABLE commits ADD CONSTRAINT fk_commits_repositories FOREIGN KEY fk_commits_repositories (repo_id)
             REFERENCES repositories (id);
 
         -- Reference: fk_filechanges_commits (table: filechanges)
-        ALTER TABLE filechanges ADD CONSTRAINT fk_filechanges_commits FOREIGN KEY fk_filechanges_commits (commit_sha)
-            REFERENCES commits (sha);
+        ALTER TABLE filechanges ADD CONSTRAINT fk_filechanges_commits FOREIGN KEY fk_filechanges_commits (commit_id)
+            REFERENCES commits (id);
 
         -- Reference: fk_filechanges_repositories (table: filechanges)
-        ALTER TABLE filechanges ADD CONSTRAINT fk_filechanges_repositories FOREIGN KEY fk_filechanges_repositories (project_id)
+        ALTER TABLE filechanges ADD CONSTRAINT fk_filechanges_repositories FOREIGN KEY fk_filechanges_repositories (repo_id)
             REFERENCES repositories (id);
 
         -- Reference: fk_filesofproject_repositories (table: filesofproject)
-        ALTER TABLE filesofproject ADD CONSTRAINT fk_filesofproject_repositories FOREIGN KEY fk_filesofproject_repositories (project_id)
+        ALTER TABLE filesofproject ADD CONSTRAINT fk_filesofproject_repositories FOREIGN KEY fk_filesofproject_repositories (repo_id)
             REFERENCES repositories (id)
             ON DELETE CASCADE
             ON UPDATE CASCADE;
 
         -- Reference: fk_filestats_repositories (table: filestats)
-        ALTER TABLE filestats ADD CONSTRAINT fk_filestats_repositories FOREIGN KEY fk_filestats_repositories (project_id)
+        ALTER TABLE filestats ADD CONSTRAINT fk_filestats_repositories FOREIGN KEY fk_filestats_repositories (repo_id)
             REFERENCES repositories (id);
 
         -- Reference: fk_filestats_users (table: filestats)
@@ -212,7 +222,7 @@ def initDB(db):
             REFERENCES users (user_id);
 
         -- Reference: fk_projectstats_repositories (table: projectstats)
-        ALTER TABLE projectstats ADD CONSTRAINT fk_projectstats_repositories FOREIGN KEY fk_projectstats_repositories (project_id)
+        ALTER TABLE projectstats ADD CONSTRAINT fk_projectstats_repositories FOREIGN KEY fk_projectstats_repositories (repo_id)
             REFERENCES repositories (id)
             ON DELETE CASCADE
             ON UPDATE CASCADE;
@@ -224,13 +234,14 @@ def initDB(db):
             ON UPDATE CASCADE;
 
         -- Reference: issues_repositories (table: issues)
-        ALTER TABLE issues ADD CONSTRAINT issues_repositories FOREIGN KEY issues_repositories (repository_id)
+        ALTER TABLE issues ADD CONSTRAINT issues_repositories FOREIGN KEY issues_repositories (repo_id)
             REFERENCES repositories (id);
 
         -- Reference: issues_users (table: issues)
         ALTER TABLE issues ADD CONSTRAINT issues_users FOREIGN KEY issues_users (assignee_id)
             REFERENCES users (user_id);
 
+        -- End of file.
     """)
 
     db.commit()

@@ -25,15 +25,18 @@ class Coloumns:
         is_github_user = 'is_github_user'
 
     class FileChanges:
+        id = 'id'
         sha = 'sha'
-        repo_id = 'project_id'
+        repo_id = 'repo_id'
         commit_sha = 'commit_sha'
-        path = 'file_name'
+        path = 'file_path'
         status = 'status'
         additions = 'additions'
         deletions = 'deletions'
         changes = 'changes'
+        file_id = 'file_id'
 
     class FilesOfProject:
+        id = 'id'
         repo_id = 'repo_id'
-        path = 'filename'
+        path = 'file_path'
