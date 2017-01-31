@@ -124,7 +124,7 @@ class GitHubHarvester:
 
         return
 
-    def __retrieveCommitsOfRepo(self, repoURL, project_id, since):
+    def __retrieveCommitsOfRepo(self, repoURL, repo_id, since):
         print("Retriving commits from " + repoURL)
         requestURL = str(repoURL) + "/commits?" + since + "&page=1&per_page=100"
         res = self.__requester.makeRequest(requestURL)
@@ -166,13 +166,13 @@ class GitHubHarvester:
                                 if self.__databaseService.checkIfUserExist(commitDetail["commit"]["committer"]["email"]) == False:
                                     self.__databaseService.insertUser(commitDetail["commit"]["committer"])
 
-                            self.__databaseService.insertCommit(commitDetail, project_id)
+                            self.__databaseService.insertCommit(commitDetail, repo_id)
 
         else: # Request gave an error
             print("Error while retrieving: " + requestURL)
             print("Status code: "  + str(res.status_code))
 
-    def __retrieveContributorsOfRepo(self, repoUrl, project_id):
+    def __retrieveContributorsOfRepo(self, repoUrl, repo_id):
         index = 1
 
         while(1):
@@ -196,7 +196,7 @@ class GitHubHarvester:
                             self.__retrieveSingleUser(login)
 
                         userid = self.__databaseService.getUserIdFromLogin(login)
-                        self.__databaseService.insertContribution(userid,project_id,contributions)
+                        self.__databaseService.insertContribution(userid, repo_id, contributions)
 
             else: # Request gave an error
                 print("Error while retrieving: " + contributionsURL)
