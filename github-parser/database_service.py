@@ -355,8 +355,8 @@ class DatabaseService:
             no_of_contributors = self.__cursor.fetchone()[0]
 
             self.__cursor.execute(""" select count(*) from (
-                select count(*), file_path, changes from filechanges join commits on commit_sha = commits.sha
-                where filechanges.repo_id = %s and (created_at BETWEEN %s and %s) group by file_path) filesCount """,
+                select count(*) from filechanges join commits on commits.id = filechanges.commit_id
+                where filechanges.repo_id = %s and (created_at BETWEEN %s and %s) group by filechanges.file_path) filesCount """,
                 (repo_id, s_date, e_date))
             self.__db.commit()
             no_of_changed_files = self.__cursor.fetchone()[0]
