@@ -27,7 +27,7 @@ class ContributorMatrixGenerator:
             additions = self.__databaseService.getCommitAdditions (commit_sha)
             deletions = self.__databaseService.getCommitDeletions (commit_sha)
             
-            commit_files = [file[Coloumns.FileChanges.file_id] for file in files]
+            commit_files = [file[Coloumns.FileChanges.path] for file in files]
             committer_id = committer['author_id']
             commit_date = first_cont_date ['created_at']
             commit_additions = additions['additions']
@@ -50,6 +50,7 @@ class ContributorMatrixGenerator:
                 contributor_file_array[committer_id] = {}
                 contributor_matrix[committer_id] = {}
             
+            #add file to contributor files 
             for file in commit_files:
                 file_exists = 0
                 for files in contributor_file_array[committer_id]:                    
@@ -58,7 +59,7 @@ class ContributorMatrixGenerator:
                         break
                 if file_exists == 0:
                     contributor_file_array[committer_id][len(contributor_file_array[committer_id])]=file
-            
+           
         for contributor1 in contributor_file_array:                              
             for contributor2 in contributor_file_array:                    
                 shared_items = set(contributor_file_array[contributor1].items()) & set(contributor_file_array[contributor2].items())
