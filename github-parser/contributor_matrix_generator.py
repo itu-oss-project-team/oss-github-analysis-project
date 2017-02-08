@@ -27,7 +27,7 @@ class ContributorMatrixGenerator:
             additions = self.__databaseService.getCommitAdditions (commit_sha)
             deletions = self.__databaseService.getCommitDeletions (commit_sha)
             
-            commit_files = [file[Coloumns.FileChanges.path] for file in files]
+            commit_files = [file[Coloumns.FileChanges.file_id] for file in files]
             committer_id = committer['author_id']
             commit_date = first_cont_date ['created_at']
             commit_additions = additions['additions']
@@ -51,15 +51,17 @@ class ContributorMatrixGenerator:
                 contributor_matrix[committer_id] = {}
             
             for file in commit_files:
-                if file not in  contributor_file_array[committer_id]:
+                file_exists = 0
+                for files in contributor_file_array[committer_id]:                    
+                    if contributor_file_array[committer_id][files] == file:
+                        file_exists = 1
+                        break
+                if file_exists == 0:
                     contributor_file_array[committer_id][len(contributor_file_array[committer_id])]=file
-        
             
-        for contributor1 in contributor_file_array:
-            print(len(contributor_file_array[contributor1]))                                
+        for contributor1 in contributor_file_array:                              
             for contributor2 in contributor_file_array:                    
                 shared_items = set(contributor_file_array[contributor1].items()) & set(contributor_file_array[contributor2].items())
-                #print(len(shared_items))
                 self.__increment_file_count(contributor_matrix, contributor1, contributor2, len(shared_items))
         
         #Calculate project metrics                    
@@ -133,7 +135,5 @@ class ContributorMatrixGenerator:
     def __increment_file_count(self, contributor_matrix, contributor1, contributor2, amount):
         if contributor1 not in contributor_matrix:
             contributor_matrix[contributor1] = {}
-        if contributor2 in contributor_matrix[contributor1]:
-            contributor_matrix[contributor1][contributor2] += amount
         else:
             contributor_matrix[contributor1][contributor2] = amount
