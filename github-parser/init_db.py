@@ -122,7 +122,7 @@ def initDB(db):
             comments int NULL,
             created_at timestamp NULL,
             updated_at timestamp NULL,
-            closed_at int NULL,
+            closed_at timestamp NULL,
             CONSTRAINT issues_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 

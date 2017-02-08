@@ -71,8 +71,11 @@ class GitHubHarvester:
             # Repo can be new as it's first info
             start_time_string = str(datetime.now())
             start_time = time.time()
+            
+            
             self.__retrieveCommitsOfRepo(repo_url, repo_id, time_param)
             self.__retrieveContributorsOfRepo(repo_url, repo_id)
+            self.__retrieveIssuesofRepo(repo_url, repo_id)
             # Let's mark the repo as filled with time which is beginning of fetching
             self.__databaseService.setRepoFilledAt(repo_id, start_time_string)
             elapsed_time = time.time() - start_time
@@ -201,6 +204,56 @@ class GitHubHarvester:
             else: # Request gave an error
                 print("Error while retrieving: " + contributionsURL)
                 print("Status code: "  + str(result.status_code))
+                
+    def __retrieveIssuesofRepo(self, repoURL, repo_id):
+        index = 1
+        
+        while(1):
+            IssuesURL = repoURL + "/issues?page="+ str(index) + "&per_page=100"
+            result = self.__requester.makeRequest(IssuesURL)
+            
+            if(result.status_code == 200):
+                resultJson = result.json()
+                index = index + 1
+                
+                if not resultJson:
+                    break
+                else:
+                    for issues in resultJson:
+                            id = issues["id"]
+                            url = issues["url"]
+                            number = issues["number"]
+                            title =  issues["title"]
+                            repo_id = repo_id
+                            reporter_id = issues["user"]["id"]
+                            assignee_id = None
+                            #assignee_id = issues["assignee"]
+                            #if assignee_id:
+                              # assignee_id =assignee_id["id"]
+                            state = issues["state"]
+                            comments = issues["comments"]
+                            created_at = str(issues["created_at"])[:10]
+                            updated_at = str(issues["updated_at"])[:10]
+                            print(str(issues["closed_at"]))
+                            closed_at = "0000-00-00"
+                            if (str(issues["closed_at"]) == "None"):
+                                closed_at = "2000-01-01 00:00:00"
+                            else:
+                                 closed_at = str(issues["closed_at"])[:10]
+                            
+                            
+                            
+                            print(issues["number"])
+                            print(title)    
+                            print (closed_at)   
+                            self.__databaseService.insertIssue(id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at)   
+                       
+                            print (str(url))
+                    
+            else: # Request gave an error
+                print("Error while retrieving: " + contributionsURL)
+                print("Status code: "  + str(result.status_code))
+        
 
     def __buildTimeParameterString(self, since_date, until_date):
         # Let's build time parameters string for requests that accept time intervals as parameters
