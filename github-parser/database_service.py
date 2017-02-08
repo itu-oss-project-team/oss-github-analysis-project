@@ -289,7 +289,24 @@ class DatabaseService:
             self.__db.commit()
             is_github_user = self.__dictCursor.fetchone()
             return is_github_user
-
+    
+    def getCommitDate (self,commit_sha):
+            self.__dictCursor.execute(""" SELECT created_at FROM commits WHERE sha = %s""", commit_sha)
+            self.__db.commit()
+            commit_date = self.__dictCursor.fetchone()
+            return commit_date
+    
+    def getCommitAdditions (self,commit_sha):
+            self.__dictCursor.execute(""" SELECT additions FROM commits WHERE sha = %s""", commit_sha)
+            self.__db.commit()
+            commit_additions = self.__dictCursor.fetchone()
+            return commit_additions
+    
+    def getCommitDeletions (self,commit_sha):
+            self.__dictCursor.execute(""" SELECT deletions FROM commits WHERE sha = %s""", commit_sha)
+            self.__db.commit()
+            commit_deletions = self.__dictCursor.fetchone()
+            return commit_deletions       
 
     def getOwnerLoginbyId(self, id):
         self.__dictCursor.execute(""" SELECT login from users where github_user_id = %s""", (id))
