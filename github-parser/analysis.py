@@ -32,6 +32,7 @@ def main():
     analysis = Analysis(secret_config)
     repos = analysis.getRepos()
     for repo in repos:
+        print("Repo " + str(repo) + " is started.")
         analysis.setMonthlyProjectStats(repo)
         analysis.setFileStats(repo)
         print("Repo " + str(repo) + " is done.")

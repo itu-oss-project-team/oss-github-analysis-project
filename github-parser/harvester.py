@@ -43,7 +43,8 @@ class GitHubHarvester:
         start_time_string = str(datetime.now())
         start_time = time.time()
         self.__retrieveCommitsOfRepo(repo_url, repo_id, time_param)
-        self.__retrieveContributorsOfRepo(repo_url, repo_id)
+        #self.__retrieveContributorsOfRepo(repo_url, repo_id)
+        #self.__retrieveIssuesofRepo(repo_url, repo_id)
         # Let's mark the repo as filled with time which is beginning of fetching
         self.__databaseService.setRepoFilledAt(repo_id, start_time_string)
         elapsed_time = time.time() - start_time
@@ -52,8 +53,6 @@ class GitHubHarvester:
 
     def fetchRepos(self, min_stars, since_date=None, until_date=None, force_fetch=False):
         self.__retrieveProjects(min_stars)
-
-        time_param = self.__buildTimeParameterString(since_date, until_date)
 
         repos = self.__databaseService.getRepoUrls()
         for repo in repos:
@@ -71,11 +70,19 @@ class GitHubHarvester:
             # Repo can be new as it's first info
             start_time_string = str(datetime.now())
             start_time = time.time()
-            
-            
+
+            if repo[Coloumns.Repo.filled_at] is not None:
+                repo_filled_at = repo[Coloumns.Repo.filled_at]
+                repo_filled_at_str = str(repo_filled_at).split()
+                repo_filled_at_string =  repo_filled_at_str[0] + "T" + repo_filled_at_str[1] + "Z"
+                time_param = self.__buildTimeParameterString(repo_filled_at_string, until_date)
+            else:
+                time_param = self.__buildTimeParameterString(since_date, until_date)
+
             self.__retrieveCommitsOfRepo(repo_url, repo_id, time_param)
-            self.__retrieveContributorsOfRepo(repo_url, repo_id)
-            self.__retrieveIssuesofRepo(repo_url, repo_id)
+            #self.__retrieveContributorsOfRepo(repo_url, repo_id)
+            #self.__retrieveIssuesofRepo(repo_url, repo_id)
+
             # Let's mark the repo as filled with time which is beginning of fetching
             self.__databaseService.setRepoFilledAt(repo_id, start_time_string)
             elapsed_time = time.time() - start_time
@@ -204,18 +211,18 @@ class GitHubHarvester:
             else: # Request gave an error
                 print("Error while retrieving: " + contributionsURL)
                 print("Status code: "  + str(result.status_code))
-                
+
     def __retrieveIssuesofRepo(self, repoURL, repo_id):
         index = 1
-        
+
         while(1):
             IssuesURL = repoURL + "/issues?page="+ str(index) + "&per_page=100"
             result = self.__requester.makeRequest(IssuesURL)
-            
+            print("Issues page: " + str(index))
             if(result.status_code == 200):
                 resultJson = result.json()
                 index = index + 1
-                
+
                 if not resultJson:
                     break
                 else:
@@ -240,20 +247,20 @@ class GitHubHarvester:
                                 closed_at = "2000-01-01 00:00:00"
                             else:
                                  closed_at = str(issues["closed_at"])[:10]
-                            
-                            
-                            
+
+
+
                             print(issues["number"])
-                            print(title)    
-                            print (closed_at)   
-                            self.__databaseService.insertIssue(id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at)   
-                       
+                            print(title)
+                            print (closed_at)
+                            self.__databaseService.insertIssue(id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at)
+
                             print (str(url))
-                    
+
             else: # Request gave an error
                 print("Error while retrieving: " + contributionsURL)
                 print("Status code: "  + str(result.status_code))
-        
+
 
     def __buildTimeParameterString(self, since_date, until_date):
         # Let's build time parameters string for requests that accept time intervals as parameters

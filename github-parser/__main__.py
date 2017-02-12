@@ -15,7 +15,7 @@ def main():
         secret_config = yaml.load(ymlfile)
 
     github_harvester = GitHubHarvester(config, secret_config)
-    github_harvester.fetchRepos("40000", "2016-01-01T00:00:00Z", None, True)
+    github_harvester.fetchRepos("10000", "2016-01-01T00:00:00Z", "2017-04-01T00:00:00Z", True)
 
 if __name__ == "__main__":
     main()
