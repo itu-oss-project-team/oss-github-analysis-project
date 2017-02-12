@@ -207,7 +207,7 @@ class DatabaseService:
         return repos
 
     def getRepoUrls(self):
-        self.__dictCursor.execute("""SELECT url, id, filled_at FROM repositories ORDER BY stargazers_count ASC""")
+        self.__dictCursor.execute("""SELECT url, id, filled_at FROM repositories ORDER BY stargazers_count DESC""")
         self.__db.commit()
 
         urls = self.__dictCursor.fetchall()
