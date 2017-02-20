@@ -159,17 +159,19 @@ class GitHubHarvester:
                         #print( str(repoURL) + " current commit sha: " + commitDetail["sha"])
                         if commitDetail is not None:
 
+
                             # insert Author
 
                             if commitDetail["author"] is not None: #if there's an author field.
-                                if commitDetail["author"]["login"] is not None: #if author has a github username.
-                                    #if user does not exist in database.
-                                    if self.__databaseService.checkIfGithubUserExist(commitDetail["author"]["login"]) == False:
-                                        self.__retrieveSingleUser(commitDetail["author"]["login"]) # retrieve and add user.
-                                else:
+
+                                if "login" not in commitDetail["author"]: #if author key does not have a login value.
                                     with open("commit_problems.txt", "a") as commit_problems_file:
                                         commit_problems_file.write(str(repoURL) + " current commit sha: " + commitDetail["sha"])
                                     continue
+
+                                #if user does not exist in database.
+                                if self.__databaseService.checkIfGithubUserExist(commitDetail["author"]["login"]) == False:
+                                    self.__retrieveSingleUser(commitDetail["author"]["login"]) # retrieve and add user.
 
                             else: #if there's no author field. --> non-github user.
                                 #if non-github user exist in database
@@ -184,15 +186,13 @@ class GitHubHarvester:
                             #insert Committer key
 
                             if commitDetail["committer"] is not None: #if there's an committer field.
-                                if commitDetail["committer"]["login"] is not None: #if committer has a github username.
-                                    #if user does not exist in database.
-                                    if self.__databaseService.checkIfGithubUserExist(commitDetail["committer"]["login"]) == False:
-                                        self.__retrieveSingleUser(commitDetail["committer"]["login"]) #retrieve and add user.
-
-                                else:
+                                if "login" not in commitDetail["committer"]: #if committer key does not have a login value.
                                     with open("commit_problems.txt", "a") as commit_problems_file:
                                         commit_problems_file.write(str(repoURL) + " current commit sha: " + commitDetail["sha"])
                                     continue
+                                #if user does not exist in database.
+                                if self.__databaseService.checkIfGithubUserExist(commitDetail["committer"]["login"]) == False:
+                                        self.__retrieveSingleUser(commitDetail["committer"]["login"]) #retrieve and add user.
 
                             else: #if there's no committer field. --> non-github user.
                                  #if non-github user exist in database
