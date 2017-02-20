@@ -156,7 +156,7 @@ class GitHubHarvester:
                         res = self.__requester.makeRequest(__requestURL)
                         commitDetail = res.json()
 
-                        print( str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                        #print( str(repoURL) + " current commit sha: " + commitDetail["sha"])
                         if commitDetail is not None:
 
                             if commitDetail["author"] is not None:
