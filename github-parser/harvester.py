@@ -71,7 +71,7 @@ class GitHubHarvester:
             start_time_string = str(datetime.now())
             start_time = time.time()
 
-            if repo[Coloumns.Repo.filled_at] is not None:
+            if repo[Coloumns.Repo.filled_at] is not None and force_fetch is False:
                 repo_filled_at = repo[Coloumns.Repo.filled_at]
                 repo_filled_at_str = str(repo_filled_at).split()
                 repo_filled_at_string =  repo_filled_at_str[0] + "T" + repo_filled_at_str[1] + "Z"
