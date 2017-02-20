@@ -61,10 +61,6 @@ class GitHubHarvester:
                 continue
 
             repo_id = repo[Coloumns.Repo.id]
-            if not force_fetch and self.__databaseService.checkIfRepoFilled(repo_id):
-                # Repo filled before so i can skip it now
-                print("Repo already fetched: " + repo_url)
-                continue
 
             print("---> Fetching: " + repo_url)
             # Repo can be new as it's first info
@@ -73,6 +69,7 @@ class GitHubHarvester:
 
             if repo[Coloumns.Repo.filled_at] is not None and force_fetch is False:
                 repo_filled_at = repo[Coloumns.Repo.filled_at]
+                print("---> Repo: " + repo_url + " has some data in it, starting from this time: " + str(repo_filled_at))
                 repo_filled_at_str = str(repo_filled_at).split()
                 repo_filled_at_string =  repo_filled_at_str[0] + "T" + repo_filled_at_str[1] + "Z"
                 time_param = self.__buildTimeParameterString(repo_filled_at_string, until_date)
