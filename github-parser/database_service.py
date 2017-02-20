@@ -206,6 +206,18 @@ class DatabaseService:
             repos = self.__dictCursor.fetchall()
         return repos
 
+    def getRepoByFullName(self, full_name, get_only_ids=False):
+        if get_only_ids:
+            self.__cursor.execute(""" SELECT id FROM repositories where full_name = %s""", full_name)
+            self.__db.commit()
+            repos = self.__cursor.fetchall()
+            repos = [repo[0] for repo in repos]
+        else:
+            self.__dictCursor.execute(""" SELECT * FROM repositories where full_name = %s""", full_name)
+            self.__db.commit()
+            repos = self.__dictCursor.fetchall()
+        return repos
+
     def getRepoUrls(self):
         self.__dictCursor.execute("""SELECT url, id, filled_at FROM repositories ORDER BY stargazers_count DESC""")
         self.__db.commit()
