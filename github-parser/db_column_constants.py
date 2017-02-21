@@ -1,4 +1,4 @@
-class Coloumns:
+class Columns:
     class Repo:
         id = 'id'
         url = 'url'

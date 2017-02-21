@@ -1,10 +1,9 @@
-from datetime import datetime
 import time
 
 from database_service import DatabaseService
 
-class CommitMatrixGenerator:
 
+class CommitMatrixGenerator:
     def __init__(self, secret_config):
         self.__databaseService = DatabaseService(secret_config['mysql'])
 

@@ -1,12 +1,9 @@
 from database_service import DatabaseService
-from db_coloumn_constants import Coloumns
-from datetime import datetime
+from db_column_constants import Columns
 import time
-import os.path
-import yaml
+
 
 class FileMatrixGenerator:
-
     def __init__(self, secret_config):
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
@@ -20,7 +17,7 @@ class FileMatrixGenerator:
         # For every commit in repo
         for commit_id in commits:
             files = self.__databaseService.getFilesChangesOfCommit(commit_id)
-            commit_files = [file[Coloumns.FileChanges.path] for file in files]
+            commit_files = [file[Columns.FileChanges.path] for file in files]
             repo_files.update(commit_files)
             for file_path_1 in commit_files:
                 for file_path_2 in commit_files:
@@ -43,7 +40,6 @@ class FileMatrixGenerator:
 
         elapsed_time = time.time() - start_time
         print("---> File matrix generated for repo (" + str(repo_id) + ") in " + str(elapsed_time) + " seconds.")
-
 
     def __increment_commit_count(self, file_matrix, file_path_1, file_path_2):
         if file_path_1 not in file_matrix:

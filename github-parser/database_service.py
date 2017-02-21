@@ -3,7 +3,7 @@
 import pymysql
 import dateutil.parser
 import dateutil.rrule
-from db_coloumn_constants import Coloumns
+from db_column_constants import Columns
 from _datetime import datetime
 
 
@@ -242,13 +242,6 @@ class DatabaseService:
             commits = self.__dictCursor.fetchall()
         return commits
 
-    def getCommitIdsOfRepo(self, repo_id):
-        self.__cursor.execute(""" SELECT commit_id FROM commits WHERE repo_id = %s""", repo_id)
-        self.__db.commit()
-        commits = self.__cursor.fetchall()
-        commits = [commit[0] for commit in commits]
-        return commits
-
     '''
         Get all files of a specified repo in DB
         if get_only_file_names is true it will return a list of full file paths
@@ -340,7 +333,7 @@ class DatabaseService:
         self.__db.commit()
         user_id = self.__dictCursor.fetchone()
 
-        return user_id[Coloumns.User.id]
+        return user_id[Columns.User.id]
 
     # Returns user id associated with given GitHub login name, for GitHub users
     def getUserIdFromLogin(self, login):
@@ -349,7 +342,7 @@ class DatabaseService:
         self.__db.commit()
         user_id = self.__dictCursor.fetchone()
 
-        return user_id[Coloumns.User.id]
+        return user_id[Columns.User.id]
 
     def checkIfGithubUserExist(self, login):
         self.__dictCursor.execute(""" SELECT login from users where login = %s""", (login))

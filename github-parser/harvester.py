@@ -3,7 +3,7 @@
 from requester import GitHubRequester
 from database_service import DatabaseService
 from datetime import datetime
-from db_coloumn_constants import Coloumns
+from db_column_constants import Columns
 import time
 
 
@@ -56,19 +56,19 @@ class GitHubHarvester:
 
         repos = self.__databaseService.getRepoUrls()
         for repo in repos:
-            repo_url = repo[Coloumns.Repo.url]
+            repo_url = repo[Columns.Repo.url]
             if repo_url == "https://api.github.com/repos/torvalds/linux":
                 continue
 
-            repo_id = repo[Coloumns.Repo.id]
+            repo_id = repo[Columns.Repo.id]
 
             print("---> Fetching: " + repo_url)
             # Repo can be new as it's first info
             start_time_string = str(datetime.now())
             start_time = time.time()
 
-            if repo[Coloumns.Repo.filled_at] is not None and force_fetch is False:
-                repo_filled_at = repo[Coloumns.Repo.filled_at]
+            if repo[Columns.Repo.filled_at] is not None and force_fetch is False:
+                repo_filled_at = repo[Columns.Repo.filled_at]
                 print("---> Repo: " + repo_url + " has some data in it, starting from this time: " + str(repo_filled_at))
                 repo_filled_at_str = str(repo_filled_at).split()
                 repo_filled_at_string =  repo_filled_at_str[0] + "T" + repo_filled_at_str[1] + "Z"

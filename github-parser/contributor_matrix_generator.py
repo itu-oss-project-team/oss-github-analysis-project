@@ -1,7 +1,7 @@
 import time
 
 from database_service import DatabaseService
-from db_coloumn_constants import Coloumns
+from db_column_constants import Columns
 
 class ContributorMatrixGenerator:
 
@@ -30,7 +30,7 @@ class ContributorMatrixGenerator:
             additions = self.__databaseService.getCommitAdditions(commit_id)
             deletions = self.__databaseService.getCommitDeletions(commit_id)
             
-            commit_files = [file[Coloumns.FileChanges.path] for file in files]
+            commit_files = [file[Columns.FileChanges.path] for file in files]
             committer_id = committer['author_id']
             commit_date = first_cont_date ['created_at']
             commit_additions = additions['additions']
