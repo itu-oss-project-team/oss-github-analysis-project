@@ -159,6 +159,11 @@ class GitHubHarvester:
                         #print( str(repoURL) + " current commit sha: " + commitDetail["sha"])
                         if commitDetail is not None:
 
+                            if "sha" not in commitDetail:
+                                with open("commit_problems.txt", "a") as commit_problems_file:
+                                    commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " page: " + str(i))
+                                continue
+
                             if "author" not in commitDetail:
                                 with open("commit_problems.txt", "a") as commit_problems_file:
                                     commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
