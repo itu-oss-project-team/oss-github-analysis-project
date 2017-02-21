@@ -16,16 +16,16 @@ class ContributorMatrixGenerator:
         
         contributor_info_array = {}
         
-        commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_shas=True)
+        commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_ids=True)
         
         # For every commit in repo
-        for commit_sha in commits:
+        for commit_id in commits:
 
-            files = self.__databaseService.getFilesChangesOfCommit(commit_sha)
-            committer = self.__databaseService.getContributorOfCommit (commit_sha)
-            first_cont_date = self.__databaseService.getCommitDate (commit_sha)
-            additions = self.__databaseService.getCommitAdditions (commit_sha)
-            deletions = self.__databaseService.getCommitDeletions (commit_sha)
+            files = self.__databaseService.getFilesChangesOfCommit(commit_id)
+            committer = self.__databaseService.getContributorOfCommit(commit_id)
+            first_cont_date = self.__databaseService.getCommitDate(commit_id)
+            additions = self.__databaseService.getCommitAdditions(commit_id)
+            deletions = self.__databaseService.getCommitDeletions(commit_id)
             
             commit_files = [file[Coloumns.FileChanges.path] for file in files]
             committer_id = committer['author_id']
