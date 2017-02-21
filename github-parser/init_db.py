@@ -27,7 +27,7 @@ def clearDB(db):
     cursor = db.cursor()
     cursor.execute("""
             DROP TABLE IF EXISTS
-            `filestats`, `projectstats`, `contributings`, `filechanges`, `commits`, `filesofproject`,`issues`, `repositories`, `users`;
+            `filestats`, `monthly_repositorystats`, `repositorystats`, `contributings`, `filechanges`, `commits`, `filesofproject`,`issues`, `repositories`, `users`;
     """)
 
     db.commit()
@@ -36,7 +36,7 @@ def clearDB(db):
 def initDB(db):
     cursor = db.cursor()
     cursor.execute("""
-        -- tables
+      -- tables
         -- Table: commits
         CREATE TABLE commits (
             id bigint NOT NULL AUTO_INCREMENT,
@@ -126,8 +126,8 @@ def initDB(db):
             CONSTRAINT issues_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
-        -- Table: projectstats
-        CREATE TABLE projectstats (
+        -- Table: monthly_repositorystats
+        CREATE TABLE monthly_repositorystats (
             id int NOT NULL AUTO_INCREMENT,
             repo_id int NOT NULL,
             start_date timestamp NULL,
@@ -136,7 +136,7 @@ def initDB(db):
             no_of_contributors int NULL,
             no_of_changed_files int NULL,
             no_of_file_changes int NULL,
-            CONSTRAINT projectstats_pk PRIMARY KEY (id)
+            CONSTRAINT monthly_repositorystats_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
         -- Table: repositories
@@ -159,6 +159,17 @@ def initDB(db):
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
         CREATE INDEX owner_id ON repositories (owner_id);
+
+        -- Table: repositorystats
+        CREATE TABLE repositorystats (
+            id int NOT NULL AUTO_INCREMENT,
+            repo_id int NOT NULL,
+            no_of_commits int NULL,
+            no_of_contributors int NULL,
+            no_of_changed_files int NULL,
+            no_of_file_changes int NULL,
+            CONSTRAINT repositorystats_pk PRIMARY KEY (id)
+        ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
         -- Table: users
         CREATE TABLE users (
@@ -221,8 +232,8 @@ def initDB(db):
         ALTER TABLE filestats ADD CONSTRAINT fk_filestats_users FOREIGN KEY fk_filestats_users (top_developer_id)
             REFERENCES users (user_id);
 
-        -- Reference: fk_projectstats_repositories (table: projectstats)
-        ALTER TABLE projectstats ADD CONSTRAINT fk_projectstats_repositories FOREIGN KEY fk_projectstats_repositories (repo_id)
+        -- Reference: fk_monthly_repositorystats_repositories (table: monthly_repositorystats)
+        ALTER TABLE monthly_repositorystats ADD CONSTRAINT fk_monthly_repositorystats_repositories FOREIGN KEY fk_monthly_repositorystats_repositories (repo_id)
             REFERENCES repositories (id)
             ON DELETE CASCADE
             ON UPDATE CASCADE;
@@ -230,6 +241,12 @@ def initDB(db):
         -- Reference: fk_repositories_users (table: repositories)
         ALTER TABLE repositories ADD CONSTRAINT fk_repositories_users FOREIGN KEY fk_repositories_users (owner_id)
             REFERENCES users (user_id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE;
+
+        -- Reference: fk_repositorystats_repositories (table: repositorystats)
+        ALTER TABLE repositorystats ADD CONSTRAINT fk_repositorystats_repositories FOREIGN KEY fk_repositorystats_repositories (repo_id)
+            REFERENCES repositories (id)
             ON DELETE CASCADE
             ON UPDATE CASCADE;
 
@@ -241,7 +258,6 @@ def initDB(db):
         ALTER TABLE issues ADD CONSTRAINT issues_users FOREIGN KEY issues_users (assignee_id)
             REFERENCES users (user_id);
 
-        -- End of file.
     """)
 
     db.commit()
