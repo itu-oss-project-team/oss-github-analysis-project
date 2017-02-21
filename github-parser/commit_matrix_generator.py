@@ -17,16 +17,16 @@ class CommitMatrixGenerator:
 
         # For every file in repo
         for file_name in repo_files:
-            file_commits = self.__databaseService.getCommitsOfFile(repo_id, file_name, get_only_shas=True)
+            file_commits = self.__databaseService.getCommitsOfFile(repo_id, file_name, get_only_ids=True)
             for file_commit_1 in file_commits:
                 for file_commit_2 in file_commits:
                     # For every commit pair that edits this same file
                     self.__increment_file_count(commit_matrix, file_commit_1, file_commit_2)
 
         with open(str(repo_id) + "_commitmatrix.txt", "w") as out_file:
-            repo_commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_shas=True)
-            for commit_sha in repo_commits:
-                out_file.write("%s\n" % commit_sha)
+            repo_commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_ids=True)
+            for commit_id in repo_commits:
+                out_file.write("%s\n" % commit_id)
 
             out_file.write("\n")
 

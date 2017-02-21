@@ -227,12 +227,12 @@ class DatabaseService:
 
     '''
         Get all commits of a specified repo in DB
-        if get_only_shas is true it will return a list of commits shas
+        if get_only_ids is true it will return a list of commits ids
         else it will return commits as a dict
     '''
-    def getCommitsOfRepo(self, repo_id, get_only_shas=False):
-        if get_only_shas:
-            self.__cursor.execute(""" SELECT sha FROM commits WHERE repo_id = %s""", repo_id)
+    def getCommitsOfRepo(self, repo_id, get_only_ids=False):
+        if get_only_ids:
+            self.__cursor.execute(""" SELECT id FROM commits WHERE repo_id = %s""", repo_id)
             self.__db.commit()
             commits = self.__cursor.fetchall()
             commits = [commit[0] for commit in commits]
@@ -240,6 +240,13 @@ class DatabaseService:
             self.__dictCursor.execute(""" SELECT * FROM commits WHERE repo_id = %s""", repo_id)
             self.__db.commit()
             commits = self.__dictCursor.fetchall()
+        return commits
+
+    def getCommitIdsOfRepo(self, repo_id):
+        self.__cursor.execute(""" SELECT commit_id FROM commits WHERE repo_id = %s""", repo_id)
+        self.__db.commit()
+        commits = self.__cursor.fetchall()
+        commits = [commit[0] for commit in commits]
         return commits
 
     '''
@@ -262,36 +269,36 @@ class DatabaseService:
 
     '''
         Get all files of a specified commit in DB
-        if get_only_shas is true it will return a list of file change shas
+        if get_only_ids is true it will return a list of file change ids
         else it will return file changes as a dict
     '''
-    def getFilesChangesOfCommit(self, commit_sha, get_only_shas=False):
-        if get_only_shas:
-            self.__cursor.execute(""" SELECT sha FROM filechanges WHERE commit_sha = %s""", commit_sha)
+    def getFilesChangesOfCommit(self, commit_id, get_only_ids=False):
+        if get_only_ids:
+            self.__cursor.execute(""" SELECT id FROM filechanges WHERE commit_id = %s""", commit_id)
             self.__db.commit()
             files = self.__cursor.fetchall()
             files = [file[0] for file in files]
         else:
-            self.__dictCursor.execute(""" SELECT * FROM filechanges WHERE commit_sha = %s""", commit_sha)
+            self.__dictCursor.execute(""" SELECT * FROM filechanges WHERE commit_id = %s""", commit_id)
             self.__db.commit()
             files = self.__dictCursor.fetchall()
         return files
 
-    def getCommitsOfFile(self, repo_id, file_name, get_only_shas=False):
-        if get_only_shas:
-            self.__cursor.execute("""SELECT DISTINCT commit_sha FROM filechanges WHERE repo_id = %s AND file_path = %s""", (repo_id, file_name))
+    def getCommitsOfFile(self, repo_id, file_name, get_only_ids=False):
+        if get_only_ids:
+            self.__cursor.execute("""SELECT DISTINCT commit_id FROM filechanges WHERE repo_id = %s AND file_path = %s""", (repo_id, file_name))
             self.__db.commit()
             commits = self.__cursor.fetchall()
             commits = [commit[0] for commit in commits]
         else:
-            self.__dictCursor.execute("""SELECT * FROM commits WHERE sha IN (SELECT DISTINCT commit_sha FROM filechanges WHERE repo_id = %s AND file_path = %s)""", (repo_id, file_name))
+            self.__dictCursor.execute("""SELECT * FROM commits WHERE commit_id IN (SELECT DISTINCT commit_id FROM filechanges WHERE repo_id = %s AND file_path = %s)""", (repo_id, file_name))
             commits = self.__dictCursor.fetchall()
         return commits
 
 
     ####Commiter_id or author_id???
-    def getContributorOfCommit (self,commit_sha):
-            self.__dictCursor.execute(""" SELECT author_id FROM commits WHERE sha = %s""", commit_sha)
+    def getContributorOfCommit (self, commit_id):
+            self.__dictCursor.execute(""" SELECT author_id FROM commits WHERE id = %s""", commit_id)
             self.__db.commit()
             committer_id = self.__dictCursor.fetchone()
             return committer_id
@@ -302,20 +309,20 @@ class DatabaseService:
             is_github_user = self.__dictCursor.fetchone()
             return is_github_user
 
-    def getCommitDate (self,commit_sha):
-            self.__dictCursor.execute(""" SELECT created_at FROM commits WHERE sha = %s""", commit_sha)
+    def getCommitDate (self, commit_id):
+            self.__dictCursor.execute(""" SELECT created_at FROM commits WHERE id = %s""", commit_id)
             self.__db.commit()
             commit_date = self.__dictCursor.fetchone()
             return commit_date
 
-    def getCommitAdditions (self,commit_sha):
-            self.__dictCursor.execute(""" SELECT additions FROM commits WHERE sha = %s""", commit_sha)
+    def getCommitAdditions (self, commit_id):
+            self.__dictCursor.execute(""" SELECT additions FROM commits WHERE id = %s""", commit_id)
             self.__db.commit()
             commit_additions = self.__dictCursor.fetchone()
             return commit_additions
 
-    def getCommitDeletions (self,commit_sha):
-            self.__dictCursor.execute(""" SELECT deletions FROM commits WHERE sha = %s""", commit_sha)
+    def getCommitDeletions (self, commit_id):
+            self.__dictCursor.execute(""" SELECT deletions FROM commits WHERE id = %s""", commit_id)
             self.__db.commit()
             commit_deletions = self.__dictCursor.fetchone()
             return commit_deletions

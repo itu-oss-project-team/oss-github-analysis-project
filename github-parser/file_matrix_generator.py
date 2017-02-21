@@ -15,11 +15,11 @@ class FileMatrixGenerator:
 
         # file_matrix is a 2D dict matrix
         file_matrix = {}
-        commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_shas=True)
+        commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_ids=True)
         repo_files = set()
         # For every commit in repo
-        for commit_sha in commits:
-            files = self.__databaseService.getFilesChangesOfCommit(commit_sha)
+        for commit_id in commits:
+            files = self.__databaseService.getFilesChangesOfCommit(commit_id)
             commit_files = [file[Coloumns.FileChanges.path] for file in files]
             repo_files.update(commit_files)
             for file_path_1 in commit_files:
