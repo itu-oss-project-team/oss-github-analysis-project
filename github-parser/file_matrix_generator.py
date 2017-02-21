@@ -25,10 +25,12 @@ class FileMatrixGenerator:
                     self.__increment_commit_count(file_matrix, file_path_1, file_path_2)
 
         with open(str(repo_id) + "_filematrix.csv", "w") as out_file:
+            out_file.write(";")
             for file in repo_files:
                 out_file.write("%s;" % file)
             out_file.write("\n")
             for file_1 in repo_files:
+                out_file.write("%s;" % file_1)
                 for file_2 in repo_files:
                     if not file_2 in file_matrix[file_1]:
                         out_file.write("%d;" % 0)
@@ -43,3 +45,16 @@ class FileMatrixGenerator:
             file_matrix[file_path_1][file_path_2] += 1
         else:
             file_matrix[file_path_1][file_path_2] = 1
+
+def main():
+
+    with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config.yaml'), 'r') as ymlfile:
+        config = yaml.load(ymlfile)
+
+    with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config_secret.yaml'), 'r') as ymlfile:
+        secret_config = yaml.load(ymlfile)
+
+    f = FileMatrixGenerator(secret_config)
+    f.crate_matrix(71659875)
+
+main()
