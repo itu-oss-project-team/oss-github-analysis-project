@@ -104,6 +104,7 @@ def initDB(db):
             commit_frequency float NULL,
             no_of_developers int NULL,
             top_developer_id int NULL,
+            file_id bigint NOT NULL,
             CONSTRAINT filestats_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
@@ -171,6 +172,8 @@ def initDB(db):
             CONSTRAINT repositorystats_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 
+        CREATE  UNIQUE INDEX repositorystats_idx_1 ON repositorystats (repo_id);
+
         -- Table: users
         CREATE TABLE users (
             user_id int NOT NULL AUTO_INCREMENT,
@@ -221,6 +224,12 @@ def initDB(db):
         -- Reference: fk_filesofproject_repositories (table: filesofproject)
         ALTER TABLE filesofproject ADD CONSTRAINT fk_filesofproject_repositories FOREIGN KEY fk_filesofproject_repositories (repo_id)
             REFERENCES repositories (id)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE;
+
+        -- Reference: fk_filestats_filesofproject (table: filestats)
+        ALTER TABLE filestats ADD CONSTRAINT fk_filestats_filesofproject FOREIGN KEY fk_filestats_filesofproject (file_id)
+            REFERENCES filesofproject (id)
             ON DELETE CASCADE
             ON UPDATE CASCADE;
 
