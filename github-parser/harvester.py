@@ -93,7 +93,7 @@ class GitHubHarvester:
         if (res.status_code == 200): #API has responded with OK status
             returnJson = res.json()
             if res.links:
-                print(res.links)
+                #print(res.links)
                 indexStart = res.links["last"]["url"].find("page=")
                 indexEnd = res.links["last"]["url"].find("&per_page")
                 last = res.links["last"]["url"][indexStart+5:indexEnd]
@@ -101,7 +101,7 @@ class GitHubHarvester:
                 last = 1
 
             for i in range(1, int(last)+1):
-                print(i)
+                print("Repositories: " + str(i))
                 _requestURL = "https://api.github.com/search/repositories?q=stars:>" + str(stars_count) + "&page=" + str(i) + "&per_page=100"
                 res = self.__requester.makeRequest(_requestURL)
                 returnJson = res.json()
@@ -159,6 +159,15 @@ class GitHubHarvester:
                         #print( str(repoURL) + " current commit sha: " + commitDetail["sha"])
                         if commitDetail is not None:
 
+                            if "author" not in commitDetail:
+                                with open("commit_problems.txt", "a") as commit_problems_file:
+                                    commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                continue
+
+                            elif "committer" not in commitDetail:
+                                with open("commit_problems.txt", "a") as commit_problems_file:
+                                    commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                continue
 
                             # insert Author
 
@@ -166,7 +175,7 @@ class GitHubHarvester:
 
                                 if "login" not in commitDetail["author"]: #if author key does not have a login value.
                                     with open("commit_problems.txt", "a") as commit_problems_file:
-                                        commit_problems_file.write(str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                        commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
                                     continue
 
                                 #if user does not exist in database.
@@ -180,7 +189,7 @@ class GitHubHarvester:
                                         self.__databaseService.insertUser(commitDetail["commit"]["author"]) # add non-github user.
                                 else:
                                     with open("commit_problems.txt", "a") as commit_problems_file:
-                                        commit_problems_file.write(str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                        commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
                                     continue
 
                             #insert Committer key
@@ -188,7 +197,7 @@ class GitHubHarvester:
                             if commitDetail["committer"] is not None: #if there's an committer field.
                                 if "login" not in commitDetail["committer"]: #if committer key does not have a login value.
                                     with open("commit_problems.txt", "a") as commit_problems_file:
-                                        commit_problems_file.write(str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                        commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
                                     continue
                                 #if user does not exist in database.
                                 if self.__databaseService.checkIfGithubUserExist(commitDetail["committer"]["login"]) == False:
@@ -202,7 +211,7 @@ class GitHubHarvester:
 
                                 else:
                                     with open("commit_problems.txt", "a") as commit_problems_file:
-                                        commit_problems_file.write(str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                        commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
                                     continue
 
                             self.__databaseService.insertCommit(commitDetail, repo_id)
