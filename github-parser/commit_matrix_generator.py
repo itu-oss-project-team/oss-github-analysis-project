@@ -22,21 +22,30 @@ class CommitMatrixGenerator:
                     # For every commit pair that edits this same file
                     self.__increment_file_count(commit_matrix, file_commit_1, file_commit_2)
 
-        with open(str(repo_id) + "_commitmatrix.txt", "w") as out_file:
+        # We'are generating a CSV file which is in following format: (A,B,C... are commit ids)
+        #   ;A;B;C;D;E
+        #   A;0;1;0;1;0
+        #   B;1;0;0;0;0
+        #   C;0;0;1;0;0
+        #   D;0;1;0;1;0
+        #   E;0;0;0;0;0
+        with open(str(repo_id) + "_commitmatrix.csv", "w") as out_file:
+            out_file.write(";")
             repo_commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_ids=True)
             for commit_id in repo_commits:
-                out_file.write("%s\n" % commit_id)
+                out_file.write("%s;" % commit_id)
 
             out_file.write("\n")
 
             for commit_1 in repo_commits:
+                out_file.write("%s;" % commit_1)
                 for commit_2 in repo_commits:
                     if commit_1 not in commit_matrix:
-                        out_file.write("%2d " % 0)
+                        out_file.write("%d;" % 0)
                     elif commit_2 not in commit_matrix[commit_1]:
-                        out_file.write("%2d " % 0)
+                        out_file.write("%d;" % 0)
                     else:
-                        out_file.write("%2d " % commit_matrix[commit_1][commit_2])
+                        out_file.write("%d;" % commit_matrix[commit_1][commit_2])
                 out_file.write("\n")
 
         elapsed_time = time.time() - start_time

@@ -24,6 +24,13 @@ class FileMatrixGenerator:
                     # For every files changed togehter
                     self.__increment_commit_count(file_matrix, file_path_1, file_path_2)
 
+        # We'are generating a CSV file which is in following format: (A,B,C... are file paths)
+        #   ;A;B;C;D;E
+        #   A;0;1;0;1;0
+        #   B;1;0;0;0;0
+        #   C;0;0;1;0;0
+        #   D;0;1;0;1;0
+        #   E;0;0;0;0;0
         with open(str(repo_id) + "_filematrix.csv", "w") as out_file:
             out_file.write(";")
             for file in repo_files:
