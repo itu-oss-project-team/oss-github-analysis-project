@@ -1,3 +1,5 @@
+import time
+
 from database_service import DatabaseService
 from db_coloumn_constants import Coloumns
 
@@ -7,7 +9,8 @@ class ContributorMatrixGenerator:
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
     def create_matrix(self, repo_id):
-       
+        start_time = time.time()
+
         contributor_matrix = {}
         github_user_matrix = {}
         nongithub_user_matrix = {}
@@ -131,7 +134,8 @@ class ContributorMatrixGenerator:
                             out_file.write("%3d " % contributor_matrix[contributor1][contributor2])
                 out_file.write("\n")
         
-        print('done')        
+        elapsed_time = time.time() - start_time
+        print("---> Contributor matrix generated for repo (" + str(repo_id) + ") in " + str(elapsed_time) + " seconds.")
 
     def __increment_file_count(self, contributor_matrix, contributor1, contributor2, amount):
         if contributor1 not in contributor_matrix:
