@@ -1,7 +1,8 @@
 from database_service import DatabaseService
 from db_coloumn_constants import Coloumns
+from datetime import datetime
+import time
 import os.path
-import sys
 import yaml
 
 class FileMatrixGenerator:
@@ -10,6 +11,8 @@ class FileMatrixGenerator:
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
     def crate_matrix(self, repo_id):
+        start_time = time.time()
+
         # file_matrix is a 2D dict matrix
         file_matrix = {}
         commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_shas=True)
@@ -38,6 +41,10 @@ class FileMatrixGenerator:
                         out_file.write("%d;" % file_matrix[file_1][file_2])
                 out_file.write("\n")
 
+        elapsed_time = time.time() - start_time
+        print("---> File matrix generated for repo (" + str(repo_id) + ") in " + str(elapsed_time) + " seconds.")
+
+
     def __increment_commit_count(self, file_matrix, file_path_1, file_path_2):
         if file_path_1 not in file_matrix:
             file_matrix[file_path_1] = {}
@@ -45,16 +52,3 @@ class FileMatrixGenerator:
             file_matrix[file_path_1][file_path_2] += 1
         else:
             file_matrix[file_path_1][file_path_2] = 1
-
-def main():
-
-    with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config.yaml'), 'r') as ymlfile:
-        config = yaml.load(ymlfile)
-
-    with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config_secret.yaml'), 'r') as ymlfile:
-        secret_config = yaml.load(ymlfile)
-
-    f = FileMatrixGenerator(secret_config)
-    f.crate_matrix(71659875)
-
-main()

@@ -1,3 +1,6 @@
+from datetime import datetime
+import time
+
 from database_service import DatabaseService
 
 class CommitMatrixGenerator:
@@ -6,6 +9,8 @@ class CommitMatrixGenerator:
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
     def crate_matrix(self, repo_id):
+        start_time = time.time()
+
         # commit_matrix is a 2D dict matrix
         commit_matrix = {}
         repo_files = self.__databaseService.getFilesOfRepo(repo_id, get_only_file_names=True)
@@ -34,6 +39,9 @@ class CommitMatrixGenerator:
                     else:
                         out_file.write("%2d " % commit_matrix[commit_1][commit_2])
                 out_file.write("\n")
+
+        elapsed_time = time.time() - start_time
+        print("---> Commit matrix generated for repo (" + str(repo_id) + ") in " + str(elapsed_time) + " seconds.")
 
     def __increment_file_count(self, commit_matrix, commit_sha_1, commit_sha_2):
         if commit_sha_1 not in commit_matrix:
