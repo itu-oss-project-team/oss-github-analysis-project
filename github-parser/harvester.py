@@ -3,7 +3,7 @@
 from requester import GitHubRequester
 from database_service import DatabaseService
 from datetime import datetime
-from db_coloumn_constants import Coloumns
+from db_column_constants import Columns
 import time
 
 
@@ -43,7 +43,8 @@ class GitHubHarvester:
         start_time_string = str(datetime.now())
         start_time = time.time()
         self.__retrieveCommitsOfRepo(repo_url, repo_id, time_param)
-        self.__retrieveContributorsOfRepo(repo_url, repo_id)
+        #self.__retrieveContributorsOfRepo(repo_url, repo_id)
+        #self.__retrieveIssuesofRepo(repo_url, repo_id)
         # Let's mark the repo as filled with time which is beginning of fetching
         self.__databaseService.setRepoFilledAt(repo_id, start_time_string)
         elapsed_time = time.time() - start_time
@@ -53,29 +54,32 @@ class GitHubHarvester:
     def fetchRepos(self, min_stars, since_date=None, until_date=None, force_fetch=False):
         self.__retrieveProjects(min_stars)
 
-        time_param = self.__buildTimeParameterString(since_date, until_date)
-
         repos = self.__databaseService.getRepoUrls()
         for repo in repos:
-            repo_url = repo[Coloumns.Repo.url]
+            repo_url = repo[Columns.Repo.url]
             if repo_url == "https://api.github.com/repos/torvalds/linux":
                 continue
 
-            repo_id = repo[Coloumns.Repo.id]
-            if not force_fetch and self.__databaseService.checkIfRepoFilled(repo_id):
-                # Repo filled before so i can skip it now
-                print("Repo already fetched: " + repo_url)
-                continue
+            repo_id = repo[Columns.Repo.id]
 
             print("---> Fetching: " + repo_url)
             # Repo can be new as it's first info
             start_time_string = str(datetime.now())
             start_time = time.time()
-            
-            
+
+            if repo[Columns.Repo.filled_at] is not None and force_fetch is False:
+                repo_filled_at = repo[Columns.Repo.filled_at]
+                print("---> Repo: " + repo_url + " has some data in it, starting from this time: " + str(repo_filled_at))
+                repo_filled_at_str = str(repo_filled_at).split()
+                repo_filled_at_string =  repo_filled_at_str[0] + "T" + repo_filled_at_str[1] + "Z"
+                time_param = self.__buildTimeParameterString(repo_filled_at_string, until_date)
+            else:
+                time_param = self.__buildTimeParameterString(since_date, until_date)
+
             self.__retrieveCommitsOfRepo(repo_url, repo_id, time_param)
-            self.__retrieveContributorsOfRepo(repo_url, repo_id)
-            self.__retrieveIssuesofRepo(repo_url, repo_id)
+            #self.__retrieveContributorsOfRepo(repo_url, repo_id)
+            #self.__retrieveIssuesofRepo(repo_url, repo_id)
+
             # Let's mark the repo as filled with time which is beginning of fetching
             self.__databaseService.setRepoFilledAt(repo_id, start_time_string)
             elapsed_time = time.time() - start_time
@@ -89,7 +93,7 @@ class GitHubHarvester:
         if (res.status_code == 200): #API has responded with OK status
             returnJson = res.json()
             if res.links:
-                print(res.links)
+                #print(res.links)
                 indexStart = res.links["last"]["url"].find("page=")
                 indexEnd = res.links["last"]["url"].find("&per_page")
                 last = res.links["last"]["url"][indexStart+5:indexEnd]
@@ -97,7 +101,7 @@ class GitHubHarvester:
                 last = 1
 
             for i in range(1, int(last)+1):
-                print(i)
+                print("Repositories: " + str(i))
                 _requestURL = "https://api.github.com/search/repositories?q=stars:>" + str(stars_count) + "&page=" + str(i) + "&per_page=100"
                 res = self.__requester.makeRequest(_requestURL)
                 returnJson = res.json()
@@ -152,22 +156,68 @@ class GitHubHarvester:
                         res = self.__requester.makeRequest(__requestURL)
                         commitDetail = res.json()
 
-                        print( str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                        #print( str(repoURL) + " current commit sha: " + commitDetail["sha"])
                         if commitDetail is not None:
 
-                            if commitDetail["author"] is not None:
-                                if self.__databaseService.checkIfGithubUserExist(commitDetail["author"]["login"]) == False:
-                                    self.__retrieveSingleUser(commitDetail["author"]["login"])
-                            else:
-                                if self.__databaseService.checkIfUserExist(commitDetail["commit"]["author"]["email"]) == False:
-                                    self.__databaseService.insertUser(commitDetail["commit"]["author"])
+                            if "sha" not in commitDetail:
+                                with open("commit_problems.txt", "a") as commit_problems_file:
+                                    commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " page: " + str(i))
+                                continue
 
-                            if commitDetail["committer"] is not None:
+                            if "author" not in commitDetail:
+                                with open("commit_problems.txt", "a") as commit_problems_file:
+                                    commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                continue
+
+                            elif "committer" not in commitDetail:
+                                with open("commit_problems.txt", "a") as commit_problems_file:
+                                    commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                continue
+
+                            # insert Author
+
+                            if commitDetail["author"] is not None: #if there's an author field.
+
+                                if "login" not in commitDetail["author"]: #if author key does not have a login value.
+                                    with open("commit_problems.txt", "a") as commit_problems_file:
+                                        commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                    continue
+
+                                #if user does not exist in database.
+                                if self.__databaseService.checkIfGithubUserExist(commitDetail["author"]["login"]) == False:
+                                    self.__retrieveSingleUser(commitDetail["author"]["login"]) # retrieve and add user.
+
+                            else: #if there's no author field. --> non-github user.
+                                #if non-github user exist in database
+                                if commitDetail["commit"]["author"]["email"]: #if non-github user has an email info.
+                                    if self.__databaseService.checkIfUserExist(commitDetail["commit"]["author"]["email"]) == False:
+                                        self.__databaseService.insertUser(commitDetail["commit"]["author"]) # add non-github user.
+                                else:
+                                    with open("commit_problems.txt", "a") as commit_problems_file:
+                                        commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                    continue
+
+                            #insert Committer key
+
+                            if commitDetail["committer"] is not None: #if there's an committer field.
+                                if "login" not in commitDetail["committer"]: #if committer key does not have a login value.
+                                    with open("commit_problems.txt", "a") as commit_problems_file:
+                                        commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                    continue
+                                #if user does not exist in database.
                                 if self.__databaseService.checkIfGithubUserExist(commitDetail["committer"]["login"]) == False:
-                                    self.__retrieveSingleUser(commitDetail["committer"]["login"])
-                            else:
-                                if self.__databaseService.checkIfUserExist(commitDetail["commit"]["committer"]["email"]) == False:
-                                    self.__databaseService.insertUser(commitDetail["commit"]["committer"])
+                                        self.__retrieveSingleUser(commitDetail["committer"]["login"]) #retrieve and add user.
+
+                            else: #if there's no committer field. --> non-github user.
+                                 #if non-github user exist in database
+                                if commitDetail["commit"]["committer"]["email"]:
+                                    if self.__databaseService.checkIfUserExist(commitDetail["commit"]["committer"]["email"]) == False:
+                                        self.__databaseService.insertUser(commitDetail["commit"]["committer"]) #add non-github user
+
+                                else:
+                                    with open("commit_problems.txt", "a") as commit_problems_file:
+                                        commit_problems_file.write(str(datetime.now())+ " " + str(repoURL) + " current commit sha: " + commitDetail["sha"])
+                                    continue
 
                             self.__databaseService.insertCommit(commitDetail, repo_id)
 
@@ -204,18 +254,18 @@ class GitHubHarvester:
             else: # Request gave an error
                 print("Error while retrieving: " + contributionsURL)
                 print("Status code: "  + str(result.status_code))
-                
+
     def __retrieveIssuesofRepo(self, repoURL, repo_id):
         index = 1
-        
+
         while(1):
             IssuesURL = repoURL + "/issues?page="+ str(index) + "&per_page=100"
             result = self.__requester.makeRequest(IssuesURL)
-            
+            print("Issues page: " + str(index))
             if(result.status_code == 200):
                 resultJson = result.json()
                 index = index + 1
-                
+
                 if not resultJson:
                     break
                 else:
@@ -240,20 +290,19 @@ class GitHubHarvester:
                                 closed_at = "2000-01-01 00:00:00"
                             else:
                                  closed_at = str(issues["closed_at"])[:10]
-                            
-                            
-                            
+
+
+
                             print(issues["number"])
-                            print(title)    
-                            print (closed_at)   
-                            self.__databaseService.insertIssue(id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at)   
-                       
+                            print(title)
+                            print (closed_at)
+                            self.__databaseService.insertIssue(id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at)
+
                             print (str(url))
-                    
+
             else: # Request gave an error
                 print("Error while retrieving: " + contributionsURL)
                 print("Status code: "  + str(result.status_code))
-        
 
     def __buildTimeParameterString(self, since_date, until_date):
         # Let's build time parameters string for requests that accept time intervals as parameters
@@ -263,3 +312,4 @@ class GitHubHarvester:
         if until_date is not None:
             time_param = time_param + "&until=" + until_date
         return time_param
+

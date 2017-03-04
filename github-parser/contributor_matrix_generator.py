@@ -1,5 +1,7 @@
+import time
+
 from database_service import DatabaseService
-from db_coloumn_constants import Coloumns
+from db_column_constants import Columns
 
 class ContributorMatrixGenerator:
 
@@ -7,7 +9,8 @@ class ContributorMatrixGenerator:
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
     def create_matrix(self, repo_id):
-       
+        start_time = time.time()
+
         contributor_matrix = {}
         github_user_matrix = {}
         nongithub_user_matrix = {}
@@ -16,18 +19,18 @@ class ContributorMatrixGenerator:
         
         contributor_info_array = {}
         
-        commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_shas=True)
+        commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_ids=True)
         
         # For every commit in repo
-        for commit_sha in commits:
+        for commit_id in commits:
 
-            files = self.__databaseService.getFilesChangesOfCommit(commit_sha)
-            committer = self.__databaseService.getContributorOfCommit (commit_sha)
-            first_cont_date = self.__databaseService.getCommitDate (commit_sha)
-            additions = self.__databaseService.getCommitAdditions (commit_sha)
-            deletions = self.__databaseService.getCommitDeletions (commit_sha)
+            files = self.__databaseService.getFilesChangesOfCommit(commit_id)
+            committer = self.__databaseService.getContributorOfCommit(commit_id)
+            first_cont_date = self.__databaseService.getCommitDate(commit_id)
+            additions = self.__databaseService.getCommitAdditions(commit_id)
+            deletions = self.__databaseService.getCommitDeletions(commit_id)
             
-            commit_files = [file[Coloumns.FileChanges.path] for file in files]
+            commit_files = [file[Columns.FileChanges.path] for file in files]
             committer_id = committer['author_id']
             commit_date = first_cont_date ['created_at']
             commit_additions = additions['additions']
@@ -136,7 +139,8 @@ class ContributorMatrixGenerator:
                             out_file.write("%3d " % contributor_matrix[contributor1][contributor2])
                 out_file.write("\n")
         
-        print('done')        
+        elapsed_time = time.time() - start_time
+        print("---> Contributor matrix generated for repo (" + str(repo_id) + ") in " + str(elapsed_time) + " seconds.")
 
     def __increment_file_count(self, contributor_matrix, contributor1, contributor2, amount):
         if contributor1 not in contributor_matrix:
