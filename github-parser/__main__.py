@@ -4,7 +4,7 @@ import yaml
 import os.path
 
 from harvester import GitHubHarvester
-from contributor_matrix_generator import ContributorMatrixGenerator
+from generate_matrices import GenerateMatrices
 
 def main():
 
@@ -19,12 +19,12 @@ def main():
     
     #github_harvester.fetchRepo("itu-oss-project-team","oss-github-analysis-project", "2016-01-01T00:00:00Z", None, True)
     
-    matrix_gen = ContributorMatrixGenerator(secret_config)
-    matrix_gen.create_matrix(71659875)
     
-    github_harvester = GitHubHarvester(config, secret_config)
-    github_harvester.fetchRepos(star, since, until, force)
+    matrix_gen = GenerateMatrices(secret_config)
+    matrix_gen.create_matrices(secret_config)
+    
     #github_harvester.fetchRepos("10000", "2016-01-01T00:00:00Z", "2017-04-01T00:00:00Z", True)
 
+    
 if __name__ == "__main__":
     main()
