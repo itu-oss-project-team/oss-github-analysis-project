@@ -210,12 +210,12 @@ class DatabaseService:
         if get_only_ids:
             self.__cursor.execute(""" SELECT id FROM repositories where full_name = %s""", full_name)
             self.__db.commit()
-            repos = self.__cursor.fetchall()
+            repos = self.__cursor.fetchone()
             repos = [repo[0] for repo in repos]
         else:
             self.__dictCursor.execute(""" SELECT * FROM repositories where full_name = %s""", full_name)
             self.__db.commit()
-            repos = self.__dictCursor.fetchall()
+            repos = self.__dictCursor.fetchone()
         return repos
 
     def getRepoUrls(self):

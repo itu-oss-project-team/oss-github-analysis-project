@@ -65,14 +65,21 @@ class ContributorMatrixGenerator:
            
         for contributor1 in contributor_file_array:                              
             for contributor2 in contributor_file_array:                    
-                
-                shared_items = set(contributor_file_array[contributor1]).intersection(contributor_file_array[contributor2])
-                print (contributor_file_array[contributor1])
-                print (contributor_file_array[contributor2])
-                print (shared_items)
-                print ("\n\n")
-                self.__increment_file_count(contributor_matrix, contributor1, contributor2, len(shared_items))
-                
+                ############DÜZENLE / 2 contributorun ortak dosyalarını düzgün bulmuyor
+                if (contributor1 == contributor2):
+                    shared_items = 0
+                else:
+                    print (contributor_file_array[contributor1])
+                    print (contributor_file_array[contributor2])
+                    shared_items =0
+                    for item1 in contributor_file_array[contributor1]:
+                        for item2 in contributor_file_array[contributor2]:
+                            if contributor_file_array[contributor1][item1] == contributor_file_array[contributor2][item2]:
+                                shared_items= shared_items + 1
+                                    
+                self.__increment_file_count(contributor_matrix, contributor1, contributor2, shared_items)
+                print(shared_items)
+                print('\n')
         #Calculate project metrics                    
         min_edited_lines=9999999999999999;
         max_edited_lines=0;
