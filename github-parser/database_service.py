@@ -103,12 +103,15 @@ class DatabaseService:
 
         message = commit["commit"]["message"]
         created_at = dateutil.parser.parse(commit["commit"]["author"]["date"])
-        if commit["stats"] is not None:
-            additions = commit["stats"]["additions"]
-            deletions = commit["stats"]["deletions"]
-        else:
-            additions = None
-            deletions = None
+
+        additions = None
+        deletions = None
+
+        if "stats" in commit:
+            if commit["stats"] is not None:
+                additions = commit["stats"]["additions"]
+                deletions = commit["stats"]["deletions"]
+
 
         # id=LAST_INSERT_ID(id) assures that cursor.lastrowid always returns the ID of related row
         self.__dictCursor.execute(
@@ -279,12 +282,16 @@ class DatabaseService:
 
     def getCommitsOfFile(self, repo_id, file_name, get_only_ids=False):
         if get_only_ids:
-            self.__cursor.execute("""SELECT DISTINCT commit_id FROM filechanges WHERE repo_id = %s AND file_path = %s""", (repo_id, file_name))
+            self.__cursor.execute("""SELECT DISTINCT commit_id FROM filechanges
+                                    WHERE repo_id = %s AND file_path = %s""", (repo_id, file_name))
             self.__db.commit()
             commits = self.__cursor.fetchall()
             commits = [commit[0] for commit in commits]
         else:
-            self.__dictCursor.execute("""SELECT * FROM commits WHERE commit_id IN (SELECT DISTINCT commit_id FROM filechanges WHERE repo_id = %s AND file_path = %s)""", (repo_id, file_name))
+            self.__dictCursor.execute("""SELECT * FROM commits
+                                    WHERE commit_id IN
+                                    (SELECT DISTINCT commit_id FROM filechanges WHERE repo_id = %s AND file_path = %s)""",
+                                    (repo_id, file_name))
             commits = self.__dictCursor.fetchall()
         return commits
 
@@ -363,7 +370,8 @@ class DatabaseService:
             return False
 
     def setRepoFilledAt(self, repo_id, filled_time):
-        self.__dictCursor.execute(""" UPDATE repositories SET filled_at = %s WHERE id = %s""", (filled_time, repo_id))
+        self.__dictCursor.execute(""" UPDATE repositories SET filled_at = %s WHERE id = %s""",
+                                  (filled_time, repo_id))
         self.__db.commit()
 
     #this method iterates monthly and finds number of commits, contributors, file changes and unique files of a repository.
@@ -372,20 +380,23 @@ class DatabaseService:
         for i in range(0, len(date_list)-1, 1):
             s_date = date_list[i]
             e_date = date_list[i+1]
-            self.__cursor.execute(""" select count(*) from commits where repo_id = %s and (created_at BETWEEN %s and %s) """,
+            self.__cursor.execute(""" select count(*) from commits where repo_id = %s and
+                                (created_at BETWEEN %s and %s) """,
                                   (repo_id, s_date, e_date))
             self.__db.commit()
             no_of_commits = self.__cursor.fetchone()[0]
 
             self.__cursor.execute(""" select count(*) from (
-                select count(*), author_id from commits where repo_id = %s and (created_at BETWEEN %s and %s) group by author_id
+                select count(*), author_id from commits where repo_id = %s and
+                (created_at BETWEEN %s and %s) group by author_id
                 ) contributorsCount """, (repo_id, s_date, e_date))
             self.__db.commit()
             no_of_contributors = self.__cursor.fetchone()[0]
 
             self.__cursor.execute(""" select count(*) from (
                 select count(*) from filechanges join commits on commits.id = filechanges.commit_id
-                where filechanges.repo_id = %s and (created_at BETWEEN %s and %s) group by filechanges.file_path) filesCount """,
+                where filechanges.repo_id = %s and
+                (created_at BETWEEN %s and %s) group by filechanges.file_path) filesCount """,
                 (repo_id, s_date, e_date))
             self.__db.commit()
             no_of_changed_files = self.__cursor.fetchone()[0]
@@ -404,17 +415,20 @@ class DatabaseService:
             if id is not None:
                 id = id[0]
                 self.__cursor.execute(""" INSERT INTO monthly_repositorystats
-                    (id, repo_id, start_date, end_date, no_of_commits, no_of_contributors, no_of_changed_files, no_of_file_changes)
+                    (id, repo_id, start_date, end_date, no_of_commits, no_of_contributors,
+                    no_of_changed_files, no_of_file_changes)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
                     no_of_commits = VALUES(no_of_commits), no_of_contributors = VALUES(no_of_contributors),
                     no_of_changed_files = VALUES(no_of_changed_files), no_of_file_changes = VALUES(no_of_file_changes) """,
-                    (id, repo_id, s_date, e_date, no_of_commits, no_of_contributors, no_of_changed_files, no_of_file_changes))
+                    (id, repo_id, s_date, e_date, no_of_commits, no_of_contributors,
+                     no_of_changed_files, no_of_file_changes))
                 self.__db.commit()
             else:
                 self.__cursor.execute(""" INSERT INTO monthly_repositorystats(repo_id, start_date, end_date, no_of_commits,
                     no_of_contributors, no_of_changed_files, no_of_file_changes) VALUES (%s, %s, %s, %s, %s, %s, %s) """,
-                    (repo_id, s_date, e_date, no_of_commits, no_of_contributors, no_of_changed_files, no_of_file_changes))
+                    (repo_id, s_date, e_date, no_of_commits, no_of_contributors,
+                     no_of_changed_files, no_of_file_changes))
                 self.__db.commit()
 
         return
@@ -510,20 +524,22 @@ class DatabaseService:
 
             if id:
                 self.__dictCursor.execute(""" INSERT INTO
-                    filestats(id, repo_id, project_full_name, file_path, no_of_commits, first_commit_date, last_commit_date,
-                    commit_frequency, no_of_developers, top_developer_id, file_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    filestats(id, repo_id, project_full_name, file_path, no_of_commits, first_commit_date,
+                    last_commit_date, commit_frequency, no_of_developers, top_developer_id, file_id)
+                    VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON DUPLICATE KEY UPDATE
                     no_of_commits = VALUES(no_of_commits), first_commit_date = VALUES(first_commit_date),
                     last_commit_date = VALUES(last_commit_date), commit_frequency = VALUES(commit_frequency),
                     no_of_developers = VALUES(no_of_developers), top_developer_id = VALUES(top_developer_id) """,
-                    (id["id"], repo_id, fileDetails["full_name"], fileDetails["file_path"], no_of_commits, first_commit_date, last_commit_date,
-                     commit_freq, no_of_developers, top_developer_id, file_id))
+                    (id["id"], repo_id, fileDetails["full_name"], fileDetails["file_path"], no_of_commits,
+                     first_commit_date, last_commit_date, commit_freq, no_of_developers, top_developer_id, file_id))
                 self.__db.commit()
             else:
                 self.__dictCursor.execute(""" INSERT INTO
-                    filestats(repo_id, project_full_name, file_path, no_of_commits, first_commit_date, last_commit_date,
-                    commit_frequency, no_of_developers, top_developer_id, file_id) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """,
-                    (repo_id, fileDetails["full_name"], fileDetails["file_path"], no_of_commits, first_commit_date, last_commit_date,
-                     commit_freq, no_of_developers, top_developer_id, file_id))
+                    filestats(repo_id, project_full_name, file_path, no_of_commits, first_commit_date,
+                    last_commit_date, commit_frequency, no_of_developers, top_developer_id, file_id)
+                    VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) """,
+                    (repo_id, fileDetails["full_name"], fileDetails["file_path"], no_of_commits,
+                     first_commit_date, last_commit_date, commit_freq, no_of_developers, top_developer_id, file_id))
                 self.__db.commit()
         return
