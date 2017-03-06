@@ -7,9 +7,8 @@ from graph_service import StringKeyGraph
 class FileMatrixGenerator:
     def __init__(self, secret_config):
         self.__databaseService = DatabaseService(secret_config['mysql'])
-        self.sg = StringKeyGraph()
 
-    def crate_matrix(self, repo_id):
+    def create_matrix(self, repo_id, repo_full_name):
         start_time = time.time()
 
         # file_matrix is a 2D dict matrix
@@ -23,10 +22,37 @@ class FileMatrixGenerator:
             repo_files.update(commit_files)
             for file_path_1 in commit_files:
                 for file_path_2 in commit_files:
+                    #avoid self-loops
                     if file_path_1 != file_path_2:
                         # For every files changed togehter
                         self.__increment_commit_count(file_matrix, file_path_1, file_path_2)
 
+
+        graph = self.__createGraph(file_matrix) #create graph of the matrix.
+
+        repo_metrics = graph.analyzeGraph()
+        self.__exportCsv(repo_id, repo_files, file_matrix)
+
+        file_name = repo_full_name.replace("/", "_")
+        file_name = file_name + "_file_metrics.csv"
+        graph.exportRepoMetrics(repo_metrics,  repo_full_name, file_name)
+
+        elapsed_time = time.time() - start_time
+        print("---> File matrix generated for repo (" + str(repo_id) + ") in " + str(elapsed_time) + " seconds.")
+
+
+
+    def __createGraph(self, file_matrix):
+        sg = StringKeyGraph()
+        for file_1 in file_matrix.keys():
+            for file_2 in file_matrix[file_1].keys():
+                if file_matrix[file_1][file_2] == 0:
+                    continue
+                sg.addEdge(file_1, file_2, file_matrix[file_1][file_2])
+
+        return sg
+
+    def __exportCsv(self, repo_id, repo_files, file_matrix):
         # We'are generating a CSV file which is in following format: (A,B,C... are file paths)
         #   ;A;B;C;D;E
         #   A;0;1;0;1;0
@@ -50,28 +76,8 @@ class FileMatrixGenerator:
                         out_file.write("%d;" % 0)
                     else:
                         out_file.write("%d;" % file_matrix[file_1][file_2])
-                        self.sg.addEdge(file_1, file_2, weight=file_matrix[file_1][file_2])
 
                 out_file.write("\n")
-
-        #printing edges.
-        for e in self.sg.graph.edges():
-            print(self.sg.getVertexKey(e.source()), self.sg.getVertexKey(e.target()), self.sg.graph.ep.weight[e])
-
-        #vertex metrics.
-        print("\n\n")
-        pagerank = graph_tool.centrality.pagerank(self.sg.graph, weight=self.sg.graph.ep.weight)
-        closeness = graph_tool.centrality.closeness(self.sg.graph, weight=self.sg.graph.ep.weight)
-        vertex_betweenness, edge_betweenness = graph_tool.centrality.betweenness(self.sg.graph, weight=self.sg.graph.ep.weight)
-        print("\t\t\t\tPagerank\t\tCloseness\t\tV_Betweeness")
-        for v in self.sg.graph.vertices():
-            print(self.sg.getVertexKey(v), pagerank[v], closeness[v], vertex_betweenness[v])
-
-
-        #graph_draw(self.sg.graph, vertex_text=self.sg.graph.vertex_index, vertex_font_size=18, output_size=(1000, 1000), output="two-nodes.png")
-
-        elapsed_time = time.time() - start_time
-        print("---> File matrix generated for repo (" + str(repo_id) + ") in " + str(elapsed_time) + " seconds.")
 
     def __increment_commit_count(self, file_matrix, file_path_1, file_path_2):
         if file_path_1 not in file_matrix:

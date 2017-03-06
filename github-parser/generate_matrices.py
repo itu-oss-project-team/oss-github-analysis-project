@@ -22,7 +22,8 @@ class GenerateMatrices:
         for repo in repos:
             repository = self.__databaseService.getRepoByFullName(repo)
             repo_id = repository['id']
-            file_matrix_generator.crate_matrix(repo_id)
+
+            file_matrix_generator.create_matrix(repo_id, repo)
             commit_matrix_generator.crate_matrix(repo_id)
             contributor_matrix_generator.create_matrix(repo_id)
             print ('\n')
