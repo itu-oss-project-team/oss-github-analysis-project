@@ -21,8 +21,19 @@ class StringKeyGraph:
             return vertex
         return self.vertexDict[key]
 
-    def addEdge(self, key1, key2):
-        self.graph.add_edge(self.getVertex(key1), self.getVertex(key2))
+    def getVertexKey(self, vertex):
+        if not vertex:
+            return None
+        return self.graph.vp.key[vertex]
+
+    # Adds an edge to graph, if update is true it overrides existing edge
+    def addEdge(self, key1, key2, weight=1, update=True):
+        v1 = self.getVertex(key1)
+        v2 = self.getVertex(key2)
+        edge = self.graph.edge(v1, v2)
+        if not edge or not update:  # There were no edges or I'd like to create another edge anyways
+            edge = self.graph.add_edge(self.getVertex(key1), self.getVertex(key2))
+        self.graph.ep.weight[edge] = weight
 
     def getKey(self, vertex):
         if not vertex:
