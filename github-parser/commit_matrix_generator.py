@@ -1,6 +1,8 @@
 import time
 
 from database_service import DatabaseService
+from graph_service import StringKeyGraph
+from graph_tool.all import *
 
 class CommitMatrixGenerator:
     def __init__(self, secret_config):
@@ -31,6 +33,10 @@ class CommitMatrixGenerator:
 
         self.__exportCsv(repo_id, commit_matrix)
 
+        graph = self.__creaateGraph(commit_matrix)
+
+        self.__analyzeGraph(graph)
+
         elapsed_time = time.time() - start_time
         print("---> Commit matrix generated for repo (" + str(repo_id) + ") in " + str(elapsed_time) + " seconds.")
 
@@ -60,7 +66,6 @@ class CommitMatrixGenerator:
                 unionCount = commit_file_counts[commit_1] + commit_file_counts[commit_2] - intersectCount
                 test = intersectCount / unionCount
                 commit_matrix[commit_1][commit_2] = intersectCount / unionCount
-
     '''
         We'are generating a CSV file which is in following format: (A,B,C... are commit ids)
         ;A;B;C;D;E
@@ -89,3 +94,21 @@ class CommitMatrixGenerator:
                     else:
                         out_file.write("%f;" % commit_matrix[commit_1][commit_2])
                 out_file.write("\n")
+
+    def __creaateGraph(self, commit_matrix):
+        sg = StringKeyGraph()
+        for commit1 in commit_matrix.keys():
+            for commit2 in commit_matrix[commit1].keys():
+                if commit_matrix[commit1][commit2] == 0:
+                    continue
+                sg.addEdge(commit1, commit2, commit_matrix[commit1][commit2])
+
+        return sg
+
+    def __analyzeGraph(self, graph):
+        pagerank = graph_tool.centrality.pagerank(graph.graph, weight=graph.graph.ep.weight)
+        closeness = graph_tool.centrality.closeness(graph.graph, weight=graph.graph.ep.weight)
+        vertex_betweenness, edge_betweenness = graph_tool.centrality.betweenness(graph.graph, weight=graph.graph.ep.weight)
+        print("\t\t\t\tPagerank\t\tCloseness\t\tV_Betweeness")
+        for v in graph.graph.vertices():
+            print(graph.getVertexKey(v), pagerank[v], closeness[v], vertex_betweenness[v])

@@ -9,8 +9,12 @@ class StringKeyGraph:
         else:
             self.graph = graph
 
-        string_prop = self.graph.new_vertex_property("string")  # Create vertex property
-        self.graph.vp.key = string_prop                         # Set vertex property
+        vp_key = self.graph.new_vertex_property("string")  # Create vertex property
+        self.graph.vp.key = vp_key                         # Set vertex property
+
+        ep_weight = self.graph.new_edge_property("float")  # Create edge property
+        self.graph.ep.weight = ep_weight                   # Set edge property
+
         self.vertexDict = {}
 
     def getVertex(self, key):

@@ -17,21 +17,16 @@ class GenerateMatrices:
         commit_matrix_generator = CommitMatrixGenerator(secret_config)
         contributor_matrix_generator = ContributorMatrixGenerator(secret_config)
 
-        #repos = [line.rstrip('\n') for line in open('repositories')]
-        
-        #repos = self.__databaseService.getAllRepos()
-        file_matrix_generator.crate_matrix(71659875)
+        repos = [line.rstrip('\n') for line in open('repositories.txt')]
 
-        '''
         for repo in repos:
-            
-            repository = self.__databaseService.getRepoByFullName(repo)          
-            repo_id = repository['id']             
-            #file_matrix_generator.crate_matrix(repo_id)  
-            #commit_matrix_generator.crate_matrix(repo_id)  
+            repository = self.__databaseService.getRepoByFullName(repo)
+            repo_id = repository['id']
+            file_matrix_generator.crate_matrix(repo_id)
+            commit_matrix_generator.crate_matrix(repo_id)
             contributor_matrix_generator.create_matrix(repo_id)
             print ('\n')
-        '''
+
 
 with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config.yaml'), 'r') as ymlfile:
         config = yaml.load(ymlfile)
