@@ -56,7 +56,7 @@ class FileMatrixGenerator:
 
         #printing edges.
         for e in self.sg.graph.edges():
-            print(self.sg.getVertexString(e.source()), self.sg.getVertexString(e.target()), self.sg.graph.ep.weight[e])
+            print(self.sg.getVertexKey(e.source()), self.sg.getVertexKey(e.target()), self.sg.graph.ep.weight[e])
 
         #vertex metrics.
         print("\n\n")
@@ -65,11 +65,10 @@ class FileMatrixGenerator:
         vertex_betweenness, edge_betweenness = graph_tool.centrality.betweenness(self.sg.graph, weight=self.sg.graph.ep.weight)
         print("\t\t\t\tPagerank\t\tCloseness\t\tV_Betweeness")
         for v in self.sg.graph.vertices():
-            print(self.sg.getVertexString(v), pagerank[v], closeness[v], vertex_betweenness[v])
+            print(self.sg.getVertexKey(v), pagerank[v], closeness[v], vertex_betweenness[v])
 
 
-        #graph_draw(self.sg.graph, vertex_text=self.sg.graph.vertex_index, vertex_font_size=18, output_size=(1000, 1000),
-                   output="two-nodes.png")
+        #graph_draw(self.sg.graph, vertex_text=self.sg.graph.vertex_index, vertex_font_size=18, output_size=(1000, 1000), output="two-nodes.png")
 
         elapsed_time = time.time() - start_time
         print("---> File matrix generated for repo (" + str(repo_id) + ") in " + str(elapsed_time) + " seconds.")
