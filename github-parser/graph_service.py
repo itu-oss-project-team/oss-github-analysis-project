@@ -78,12 +78,14 @@ class StringKeyGraph:
         degrees = self.graph.get_out_degrees(list(self.graph.vertices()))
         weighted_degrees = self.graph.get_out_degrees(list(self.graph.vertices()), self.graph.ep.weight)
 
+        '''
         print("\t\t\t\t\t\t\tPagerank\tCloseness\tV_Betweeness\tEigenvector\tKatz\tAuthority\tHub")
         for v in self.graph.vertices():
             print(self.getVertexKey(v), "%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f" %
                   (pagerank[v], closeness[v], vertex_betweenness[v], eigenvector[v], katz_centrality[v],
                    authority[v], hub[v], local_clustering_coefficients[v], ))
         print("\n")
+        '''
 
         statistics = collections.OrderedDict()
         statistics["no_of_nodes"] = no_of_vertices
@@ -95,7 +97,7 @@ class StringKeyGraph:
         statistics["closeness"] = self.__calculateRepoStatistics(closeness)
         statistics["vertex_betweenness"] = self.__calculateRepoStatistics(vertex_betweenness)
         statistics["eigenvector"] = self.__calculateRepoStatistics(eigenvector)
-        statistics["katz_centrality"] = self.__calculateRepoStatistics(katz_centrality)
+        #statistics["katz_centrality"] = self.__calculateRepoStatistics(katz_centrality) #returns nan for some repos
         statistics["authority"] = self.__calculateRepoStatistics(authority)
         statistics["hub"] = self.__calculateRepoStatistics(hub)
         statistics["local_clustering_coefficients"] = self.__calculateRepoStatistics(local_clustering_coefficients)

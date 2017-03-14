@@ -3,6 +3,7 @@ from db_column_constants import Columns
 import time
 from graph_tool.all import *
 from graph_service import StringKeyGraph
+import os.path
 
 class FileMatrixGenerator:
     def __init__(self, secret_config):
@@ -37,7 +38,7 @@ class FileMatrixGenerator:
         graph.exportRepoMetrics(repo_metrics,  repo_full_name, file_name)
 
         elapsed_time = time.time() - start_time
-        print("---> File matrix generated for repo (" + str(repo_id) + ") in " + str(elapsed_time) + " seconds.")
+        print("---> File matrix generated for repo (" + str(repo_full_name) + ") in " + str(elapsed_time) + " seconds.")
 
 
 
@@ -59,7 +60,17 @@ class FileMatrixGenerator:
         #   C;0;0;1;0;0
         #   D;0;1;0;1;0
         #   E;0;0;0;0;0
-        with open(str(repo_id) + "_filematrix.csv", "w") as out_file:
+
+        #export to subfolder file_matrices
+        head_dir = os.path.dirname(os.path.abspath(__file__))
+        export_dir = os.path.join(head_dir, 'file_matrices') # naming file_matrices subfolder
+
+        if not os.path.exists(export_dir): #if file_matrices subfolder does not exist
+            os.makedirs(export_dir)
+
+        filename = str(repo_id) + "_filematrix.csv"
+
+        with open(os.path.join(export_dir, filename), "w") as out_file:
             out_file.write(";")
             for file in repo_files:
                 out_file.write("%s;" % file)
