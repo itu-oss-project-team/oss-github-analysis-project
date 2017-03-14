@@ -33,8 +33,7 @@ class FileMatrixGenerator:
         repo_metrics = graph.analyzeGraph()
         self.__exportCsv(repo_id, repo_files, file_matrix)
 
-        file_name = repo_full_name.replace("/", "_")
-        file_name = file_name + "_file_metrics.csv"
+        file_name = "file_metrics.csv"
         graph.exportRepoMetrics(repo_metrics,  repo_full_name, file_name)
 
         elapsed_time = time.time() - start_time

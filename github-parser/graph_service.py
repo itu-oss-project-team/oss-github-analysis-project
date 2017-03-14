@@ -75,23 +75,30 @@ class StringKeyGraph:
         central_point_dominance = graph_tool.centrality.central_point_dominance(self.graph, vertex_betweenness)
         local_clustering_coefficients = graph_tool.clustering.local_clustering(self.graph, undirected=True)
 
+        degrees = self.graph.get_out_degrees(list(self.graph.vertices()))
+        weighted_degrees = self.graph.get_out_degrees(list(self.graph.vertices()), self.graph.ep.weight)
+
         print("\t\t\t\t\t\t\tPagerank\tCloseness\tV_Betweeness\tEigenvector\tKatz\tAuthority\tHub")
         for v in self.graph.vertices():
             print(self.getVertexKey(v), "%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f\t%.5f" %
                   (pagerank[v], closeness[v], vertex_betweenness[v], eigenvector[v], katz_centrality[v],
-                   authority[v], hub[v], local_clustering_coefficients[v]))
+                   authority[v], hub[v], local_clustering_coefficients[v], ))
         print("\n")
 
         statistics = collections.OrderedDict()
-        statistics["weight"] = self.__calculateRepoStatisticsFromGraph(self.graph.ep.weight)
-        statistics["pagerank"] = self.__calculateRepoStatisticsFromGraph(pagerank)
-        statistics["closeness"] = self.__calculateRepoStatisticsFromGraph(closeness)
-        statistics["vertex_betweenness"] = self.__calculateRepoStatisticsFromGraph(vertex_betweenness)
-        statistics["eigenvector"] = self.__calculateRepoStatisticsFromGraph(eigenvector)
-        statistics["katz_centrality"] = self.__calculateRepoStatisticsFromGraph(katz_centrality)
-        statistics["authority"] = self.__calculateRepoStatisticsFromGraph(authority)
-        statistics["hub"] = self.__calculateRepoStatisticsFromGraph(hub)
-        statistics["local_clustering_coefficients"] = self.__calculateRepoStatisticsFromGraph(local_clustering_coefficients)
+        statistics["no_of_nodes"] = no_of_vertices
+        statistics["no_of_edges"] = no_of_edges
+        statistics["weight"] = self.__calculateRepoStatistics(self.graph.ep.weight)
+        statistics["degree"] = self.__calculateRepoStatistics(degrees, isPropertyMap=False)
+        statistics["weighted_degree"] = self.__calculateRepoStatistics(weighted_degrees, isPropertyMap=False)
+        statistics["pagerank"] = self.__calculateRepoStatistics(pagerank)
+        statistics["closeness"] = self.__calculateRepoStatistics(closeness)
+        statistics["vertex_betweenness"] = self.__calculateRepoStatistics(vertex_betweenness)
+        statistics["eigenvector"] = self.__calculateRepoStatistics(eigenvector)
+        statistics["katz_centrality"] = self.__calculateRepoStatistics(katz_centrality)
+        statistics["authority"] = self.__calculateRepoStatistics(authority)
+        statistics["hub"] = self.__calculateRepoStatistics(hub)
+        statistics["local_clustering_coefficients"] = self.__calculateRepoStatistics(local_clustering_coefficients)
         statistics["central_point_dominance"] = central_point_dominance
 
         return statistics
@@ -99,12 +106,16 @@ class StringKeyGraph:
         # output_size=(1000, 1000), output="two-nodes.png")
 
 
-    def __calculateRepoStatisticsFromGraph(self, metric_propertyMap):
+    def __calculateRepoStatistics(self, metric, isPropertyMap = True):
         statistics = collections.OrderedDict()
-        statistics["mean"] = metric_propertyMap.get_array().mean()
-        statistics["min"] = metric_propertyMap.get_array().min()
-        statistics["max"] = metric_propertyMap.get_array().max()
-        statistics["median"] = np.median(metric_propertyMap.get_array())
+        if isPropertyMap:
+            metric = metric.get_array() # Get a numpy.ndarray subclass (PropertyArray)
+
+        statistics["mean"] = metric.mean()
+        statistics["min"] = metric.min()
+        statistics["max"] = metric.max()
+        statistics["median"] = np.median(metric)
+
         return statistics
 
     def exportRepoMetrics(self, repo_statistics, repo_full_name, file_name):
