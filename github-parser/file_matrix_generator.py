@@ -4,6 +4,7 @@ import time
 from graph_tool.all import *
 from graph_service import StringKeyGraph
 import os.path
+import gc
 
 class FileMatrixGenerator:
     def __init__(self, secret_config):
@@ -39,7 +40,7 @@ class FileMatrixGenerator:
 
         elapsed_time = time.time() - start_time
         print("---> File matrix generated for repo (" + str(repo_full_name) + ") in " + str(elapsed_time) + " seconds.")
-
+        gc.collect()
 
 
     def __createGraph(self, file_matrix):

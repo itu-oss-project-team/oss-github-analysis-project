@@ -68,7 +68,7 @@ class StringKeyGraph:
         eigenvalue_adjacency, eigenvector = graph_tool.centrality.eigenvector(self.graph,
                                                                               weight=self.graph.ep.weight)
 
-        katz_centrality = graph_tool.centrality.katz(self.graph, weight=self.graph.ep.weight, norm=True)
+        #katz_centrality = graph_tool.centrality.katz(self.graph, weight=self.graph.ep.weight, norm=True)
         eigenvalue_cocitation, authority, hub = graph_tool.centrality.hits(self.graph,
                                                 weight=self.graph.ep.weight)
 
@@ -88,8 +88,13 @@ class StringKeyGraph:
         '''
 
         statistics = collections.OrderedDict()
-        statistics["no_of_nodes"] = no_of_vertices
-        statistics["no_of_edges"] = no_of_edges
+        #statistics["no_of_nodes"] = no_of_vertices
+        #statistics["no_of_edges"] = no_of_edges
+        '''
+        it might be better not to include no_of_nodes and no_of_edges to the analysis
+        they overwhelm the results
+        '''
+
         statistics["weight"] = self.__calculateRepoStatistics(self.graph.ep.weight)
         statistics["degree"] = self.__calculateRepoStatistics(degrees, isPropertyMap=False)
         statistics["weighted_degree"] = self.__calculateRepoStatistics(weighted_degrees, isPropertyMap=False)
