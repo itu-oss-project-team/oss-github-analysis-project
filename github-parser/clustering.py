@@ -39,16 +39,14 @@ class Clustering:
                 out_file.write("\n")
 
         #export cluster centers matrix.
-        with open("cluster_centers_" + file_name, "w") as out_file:
-            out_file.write(";")
-            for header in headers:
-                out_file.write(str(header) +";")
-            out_file.write("\n")
-            for i in range(0, kmeans.n_clusters):
-                out_file.write("Cluster " + str(i) + ";")
-                for center in kmeans.cluster_centers_[i]:
-                    out_file.write(str(center) + ";")
-                out_file.write("\n")
+
+        indexes = []
+        for i in range(0, kmeans.n_clusters):
+            indexes.append("Cluster " + str(i))
+
+        cluster_centers_df = pandas.DataFrame(kmeans.cluster_centers_, index=indexes, columns=headers)
+        cluster_centers_df.to_csv("cluster_centers_" + file_name, sep=';')
+
         return
 
 
