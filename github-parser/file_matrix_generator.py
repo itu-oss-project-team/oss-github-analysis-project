@@ -28,14 +28,26 @@ class FileMatrixGenerator:
                         # For every files changed togehter
                         self.__increment_commit_count(file_matrix, file_path_1, file_path_2)
 
+        print("------> Matrix generation in " +  time.time() - start_time + " seconds.")
+        checkpoint_time = time.time()
 
         graph = self.__createGraph(file_matrix) #create graph of the matrix.
+        print("------> Graph generation in " +  time.time() - checkpoint_time + " seconds.")
+        check_point_time = time.time()
 
         repo_metrics = graph.analyzeGraph()
+        print("------> Graph analyzing in " +  time.time() - checkpoint_time + " seconds.")
+        check_point_time = time.time()
+
         self.__exportCsv(repo_id, repo_files, file_matrix)
+        print("------> CSV exporting in " +  time.time() - checkpoint_time + " seconds.")
+        check_point_time = time.time()
 
         file_name = "file_metrics.csv"
         graph.exportRepoMetrics(repo_metrics,  repo_full_name, file_name)
+        print("------> Exporting repo metrics in " +  time.time() - checkpoint_time + " seconds.")
+        check_point_time = time.time()
+
 
         elapsed_time = time.time() - start_time
         print("---> File matrix generated for repo (" + str(repo_full_name) + ") in " + str(elapsed_time) + " seconds.")
