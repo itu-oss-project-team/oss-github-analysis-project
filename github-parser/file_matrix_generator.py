@@ -7,6 +7,7 @@ import os.path
 import gc
 import numpy as np
 import collections
+import operator
 
 class FileMatrixGenerator:
     def __init__(self, secret_config):
@@ -57,16 +58,16 @@ class FileMatrixGenerator:
     def __createGraph(self, file_matrix):
         sg = StringKeyGraph()
         edgeList = set()
-        weightList = np.array([], dtype=np.float32)
+        weightList = []
         for file_1 in file_matrix.keys():
             for file_2 in file_matrix[file_1].keys():
                 if file_matrix[file_1][file_2] != 0:
                     ''' we need to add one single undirected edge '''
-                    e = (file_1, file_2)
-                    edge = tuple(sorted(e)) #sort the edge to get a single edge pair
+                    _edge = (file_1, file_2)
+                    edge = tuple(sorted(_edge)) #sort the edge to get a single edge pair
                     if edge not in edgeList:
                         edgeList.add(edge)
-                        weightList = np.append(weightList, file_matrix[file_1][file_2])
+                        weightList.append(file_matrix[file_1][file_2])
 
         sg.graph.add_edge_list(edgeList, hashed=True, eprops=None)
         sg.graph.ep.weight.a = weightList
