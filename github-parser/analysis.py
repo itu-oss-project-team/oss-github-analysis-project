@@ -9,19 +9,21 @@ class Analysis:
         # Generate a github_requester with imported GitHub tokens
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
-    def setMonthlyRepoStats(self, repo_id):
+    def setMonthlyRepoStats(self, repo):
         start_date = dateutil.parser.parse("2016-01-01 00:00:00")
         end_date = dateutil.parser.parse("2017-03-01 00:00:00")
 
+        repo_id = self.__databaseService.getRepoByFullName(repo)["id"]
         self.__databaseService.findNumberOfCommitsAndContributorsOfProjectMonthly(repo_id, start_date, end_date)
         return
 
-    def setFileStats(self, repo_id):
-
+    def setFileStats(self, repo):
+        repo_id = self.__databaseService.getRepoByFullName(repo)["id"]
         self.__databaseService.findNumberOfCommitsAndDevelopersOfRepositoryFiles(repo_id)
         return
 
-    def setRepoStats(self, repo_id):
+    def setRepoStats(self, repo):
+        repo_id = self.__databaseService.getRepoByFullName(repo)["id"]
         self.__databaseService.findNumberOfCommitsAndContributorsOfProject(repo_id)
         return
 
@@ -38,15 +40,8 @@ def main():
         secret_config = yaml.load(ymlfile)
 
     analysis = Analysis(secret_config)
-    repo = analysis.getRepo("itu-oss-project-team/oss-github-analysis-project")
-    print("Repo " + str(repo) + " is started.")
-    analysis.setRepoStats(repo)
-    analysis.setMonthlyRepoStats(repo)
-    analysis.setFileStats(repo)
-    print("Repo " + str(repo) + " is done.")
 
-    '''
-    repos = analysis.getRepos()
+    repos = [line.rstrip('\n') for line in open('repositories.txt')]
     for repo in repos:
         print("Repo " + str(repo) + " is started.")
         analysis.setRepoStats(repo)
@@ -54,7 +49,6 @@ def main():
         analysis.setFileStats(repo)
         print("Repo " + str(repo) + " is done.")
     print("Monthly repo stats and file stats analyses are done.")
-    '''
 
     return
 
