@@ -5,6 +5,8 @@ from graph_tool.all import *
 from graph_service import StringKeyGraph
 import os.path
 import gc
+import numpy as np
+import collections
 
 class FileMatrixGenerator:
     def __init__(self, secret_config):
@@ -14,7 +16,7 @@ class FileMatrixGenerator:
         start_time = time.time()
 
         # file_matrix is a 2D dict matrix
-        file_matrix = {}
+        file_matrix = collections.OrderedDict()
         commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_ids=True)
         repo_files = set()
         # For every commit in repo
@@ -50,17 +52,25 @@ class FileMatrixGenerator:
 
         elapsed_time = time.time() - start_time
         print("---> File matrix generated for repo (" + str(repo_full_name) + ") in " + str(elapsed_time) + " seconds.")
-        gc.collect()
-
+        gc.collect() #force garbage collector to collect garbage.
 
     def __createGraph(self, file_matrix):
         sg = StringKeyGraph()
+        edgeList = set()
+        weightList = np.array([], dtype=np.float32)
         for file_1 in file_matrix.keys():
             for file_2 in file_matrix[file_1].keys():
-                if file_matrix[file_1][file_2] == 0:
-                    continue
-                sg.addEdge(file_1, file_2, file_matrix[file_1][file_2])
+                if file_matrix[file_1][file_2] != 0:
+                    ''' we need to add one single undirected edge '''
+                    e = (file_1, file_2)
+                    edge = tuple(sorted(e)) #sort the edge to get a single edge pair
+                    if edge not in edgeList:
+                        edgeList.add(edge)
+                        weightList = np.append(weightList, file_matrix[file_1][file_2])
 
+        sg.graph.add_edge_list(edgeList, hashed=True, eprops=None)
+        sg.graph.ep.weight.a = weightList
+        #graph_tool.stats.remove_parallel_edges(sg.graph)
         return sg
 
     def __exportCsv(self, repo_id, repo_files, file_matrix):
