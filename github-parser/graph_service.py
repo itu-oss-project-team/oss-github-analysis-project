@@ -20,6 +20,7 @@ class StringKeyGraph:
         self.vertexDict = {}
 
     def getVertex(self, key):
+
         if key not in self.vertexDict:
             vertex = self.graph.add_vertex()
             self.vertexDict[key] = vertex
@@ -56,9 +57,12 @@ class StringKeyGraph:
         # vertex metrics.
         no_of_vertices = len(list(self.graph.vertices()))
         no_of_edges = len(list(self.graph.edges()))
+
+        # it should not try to analyze a graph with no vertex or edge.
+        if no_of_vertices == 0 or no_of_edges == 0:
+            return
         print("Number of vertices: ", no_of_vertices)
         print("Number of edges: ", no_of_edges)
-        print("\n")
 
         pagerank = graph_tool.centrality.pagerank(self.graph, weight=self.graph.ep.weight)
         closeness = graph_tool.centrality.closeness(self.graph, weight=self.graph.ep.weight, norm=True)
