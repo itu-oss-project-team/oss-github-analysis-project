@@ -55,7 +55,7 @@ class Clustering:
         #export clusters and cluster members.
         with open("clusters_" + file_name + ".txt", "w") as out_file:
             for i in range(0, kmeans.n_clusters):
-                out_file.write("Cluster " + str(i) + "\n")
+                out_file.write("Cluster " + str(i) + " size: " + str(len(clusters[i])) + "\n" )
                 for repo in clusters[i]:
                     repo_lang = self.__databaseService.getLanguageByRepoFullName(repo)
                     out_file.write(str(repo) + " - " + str(repo_lang) + "\n")
