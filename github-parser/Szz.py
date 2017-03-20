@@ -1,7 +1,7 @@
 
 from database_service import DatabaseService
 
-def IssueLinker(self,issueid,repoId):
+def IssueLinker(self,issueid,issueassigned,repoId):
     
     self.database = DatabaseService(secret_config['mysql'])
     commits = database.getCommitsOfRepo(repoId)
@@ -29,9 +29,9 @@ def IssueLinker(self,issueid,repoId):
                         print ("Found keyword")
                    
                         
-    
-    
+        if commit.committerid == issueassigned:
+            syntactic +=1;
            
-        
+            
         
      
