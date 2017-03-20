@@ -20,6 +20,7 @@ class StringKeyGraph:
         self.vertexDict = {}
 
     def getVertex(self, key):
+
         if key not in self.vertexDict:
             vertex = self.graph.add_vertex()
             self.vertexDict[key] = vertex
@@ -56,9 +57,12 @@ class StringKeyGraph:
         # vertex metrics.
         no_of_vertices = len(list(self.graph.vertices()))
         no_of_edges = len(list(self.graph.edges()))
+
+        # it should not try to analyze a graph with no vertex or edge.
+        if no_of_vertices == 0 or no_of_edges == 0:
+            return
         print("Number of vertices: ", no_of_vertices)
         print("Number of edges: ", no_of_edges)
-        print("\n")
 
         pagerank = graph_tool.centrality.pagerank(self.graph, weight=self.graph.ep.weight)
         closeness = graph_tool.centrality.closeness(self.graph, weight=self.graph.ep.weight, norm=True)
@@ -68,7 +72,7 @@ class StringKeyGraph:
         eigenvalue_adjacency, eigenvector = graph_tool.centrality.eigenvector(self.graph,
                                                                               weight=self.graph.ep.weight)
 
-        katz_centrality = graph_tool.centrality.katz(self.graph, weight=self.graph.ep.weight, norm=True)
+        #katz_centrality = graph_tool.centrality.katz(self.graph, weight=self.graph.ep.weight, norm=True)
         eigenvalue_cocitation, authority, hub = graph_tool.centrality.hits(self.graph,
                                                 weight=self.graph.ep.weight)
 
@@ -88,8 +92,13 @@ class StringKeyGraph:
         '''
 
         statistics = collections.OrderedDict()
-        statistics["no_of_nodes"] = no_of_vertices
-        statistics["no_of_edges"] = no_of_edges
+        #statistics["no_of_nodes"] = no_of_vertices
+        #statistics["no_of_edges"] = no_of_edges
+        '''
+        it might be better not to include no_of_nodes and no_of_edges to the analysis
+        they overwhelm the results
+        '''
+
         statistics["weight"] = self.__calculateRepoStatistics(self.graph.ep.weight)
         statistics["degree"] = self.__calculateRepoStatistics(degrees, isPropertyMap=False)
         statistics["weighted_degree"] = self.__calculateRepoStatistics(weighted_degrees, isPropertyMap=False)

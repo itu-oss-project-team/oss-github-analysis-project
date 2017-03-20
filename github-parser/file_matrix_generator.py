@@ -4,6 +4,10 @@ import time
 from graph_tool.all import *
 from graph_service import StringKeyGraph
 import os.path
+import gc
+import numpy as np
+import collections
+import operator
 
 class FileMatrixGenerator:
     def __init__(self, secret_config):
@@ -13,7 +17,7 @@ class FileMatrixGenerator:
         start_time = time.time()
 
         # file_matrix is a 2D dict matrix
-        file_matrix = {}
+        file_matrix = collections.OrderedDict()
         commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_ids=True)
         repo_files = set()
         # For every commit in repo
@@ -28,28 +32,46 @@ class FileMatrixGenerator:
                         # For every files changed togehter
                         self.__increment_commit_count(file_matrix, file_path_1, file_path_2)
 
+        print("------> Matrix generation in " + str(time.time() - start_time) + " seconds.")
+        checkpoint_time = time.time()
 
         graph = self.__createGraph(file_matrix) #create graph of the matrix.
+        print("------> Graph generation in " + str(time.time() - checkpoint_time) + " seconds.")
+        checkpoint_time = time.time()
 
         repo_metrics = graph.analyzeGraph()
+        print("------> Graph analyzing in " + str(time.time() - checkpoint_time) + " seconds.")
+        checkpoint_time = time.time()
+
         self.__exportCsv(repo_id, repo_files, file_matrix)
+        print("------> CSV exporting in " + str(time.time() - checkpoint_time) + " seconds.")
+        checkpoint_time = time.time()
 
         file_name = "file_metrics.csv"
         graph.exportRepoMetrics(repo_metrics,  repo_full_name, file_name)
+        print("------> Exporting repo metrics in " + str(time.time() - checkpoint_time) + " seconds.")
 
         elapsed_time = time.time() - start_time
         print("---> File matrix generated for repo (" + str(repo_full_name) + ") in " + str(elapsed_time) + " seconds.")
-
-
+        gc.collect() #force garbage collector to collect garbage.
 
     def __createGraph(self, file_matrix):
         sg = StringKeyGraph()
+        edgeList = set()
+        weightList = []
         for file_1 in file_matrix.keys():
             for file_2 in file_matrix[file_1].keys():
-                if file_matrix[file_1][file_2] == 0:
-                    continue
-                sg.addEdge(file_1, file_2, file_matrix[file_1][file_2])
+                if file_matrix[file_1][file_2] != 0:
+                    ''' we need to add one single undirected edge '''
+                    _edge = (file_1, file_2)
+                    edge = tuple(sorted(_edge)) #sort the edge to get a single edge pair
+                    if edge not in edgeList:
+                        edgeList.add(edge)
+                        weightList.append(file_matrix[file_1][file_2])
 
+        sg.graph.add_edge_list(edgeList, hashed=True, eprops=None)
+        sg.graph.ep.weight.a = weightList
+        #graph_tool.stats.remove_parallel_edges(sg.graph)
         return sg
 
     def __exportCsv(self, repo_id, repo_files, file_matrix):
