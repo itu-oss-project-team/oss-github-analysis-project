@@ -2,7 +2,8 @@
 
 from requester import GitHubRequester
 from database_service import DatabaseService
-from datetime import datetime
+from _datetime import datetime
+#from datetime import datetime
 from db_column_constants import Columns
 import time
 
@@ -42,6 +43,7 @@ class GitHubHarvester:
         # Repo can be new as it's first info
         start_time_string = str(datetime.now())
         start_time = time.time()
+        self.__retrieveIssuesofRepo(repo_url, repo_id)
         self.__retrieveCommitsOfRepo(repo_url, repo_id, time_param)
         #self.__retrieveContributorsOfRepo(repo_url, repo_id)
         #self.__retrieveIssuesofRepo(repo_url, repo_id)
@@ -75,7 +77,8 @@ class GitHubHarvester:
                 time_param = self.__buildTimeParameterString(repo_filled_at_string, until_date)
             else:
                 time_param = self.__buildTimeParameterString(since_date, until_date)
-
+                
+            self.__retrieveIssuesofRepo(repo_url, repo_id)
             self.__retrieveCommitsOfRepo(repo_url, repo_id, time_param)
             #self.__retrieveContributorsOfRepo(repo_url, repo_id)
             #self.__retrieveIssuesofRepo(repo_url, repo_id)
@@ -86,7 +89,6 @@ class GitHubHarvester:
             print("---> " + repo_url + " fetched in " + str(elapsed_time) + " seconds.")
 
     def __retrieveProjects(self, stars_count):
-
         requestURL = "https://api.github.com/search/repositories?q=stars:>" + str(stars_count) + "&page=1&per_page=100"
         res = self.__requester.makeRequest(requestURL)
         print("Started retriving projects")
@@ -301,7 +303,7 @@ class GitHubHarvester:
                             print (str(url))
 
             else: # Request gave an error
-                print("Error while retrieving: " + contributionsURL)
+                print("Error while retrieving: " + IssuesURL)
                 print("Status code: "  + str(result.status_code))
 
     def __buildTimeParameterString(self, since_date, until_date):
