@@ -4,7 +4,7 @@ import pymysql
 import dateutil.parser
 import dateutil.rrule
 from db_column_constants import Columns
-from _datetime import datetime
+from datetime import datetime
 
 
 # A service class to make DB queries such as inserting new commits etc.
@@ -568,3 +568,7 @@ class DatabaseService:
             self.__db.commit()
             return self.__dictCursor.fetchone()
 
+    def insertIssue(self,id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at):
+            self.__dictCursor.execute(""" INSERT INTO issues (id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """, (id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at))
+            self.__db.commit()
