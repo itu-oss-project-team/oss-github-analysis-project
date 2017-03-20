@@ -373,6 +373,14 @@ class DatabaseService:
                                   (filled_time, repo_id))
         self.__db.commit()
 
+    #this method returns programming language of the repo
+    def getLanguageByRepoFullName(self, full_name):
+        self.__dictCursor.execute("""SELECT language FROM repositories where full_name = %s""", full_name)
+        self.__db.commit()
+
+        result = self.__dictCursor.fetchone()
+        return result["language"]
+
     #this method iterates monthly and finds number of commits, contributors, file changes and unique files of a repository.
     def findNumberOfCommitsAndContributorsOfProjectMonthly(self, repo_id, start_date, end_date):
         date_list = list(dateutil.rrule.rrule(dateutil.rrule.MONTHLY, dtstart=start_date, until=end_date))
@@ -542,3 +550,21 @@ class DatabaseService:
                      first_commit_date, last_commit_date, commit_freq, no_of_developers, top_developer_id, file_id))
                 self.__db.commit()
         return
+
+    def getRepoStats(self, repo_full_name=None):
+        # result of all repos
+        if not repo_full_name:
+            self.__dictCursor.execute("""SELECT full_name, no_of_commits, no_of_contributors,
+                              no_of_changed_files, no_of_changed_files, no_of_file_changes
+                              FROM `repositorystats` join repositories on repo_id = repositories.id""")
+            self.__db.commit()
+            return self.__dictCursor.fetchall()
+        # result of a single repo
+        else:
+            self.__dictCursor.execute("""SELECT full_name, no_of_commits, no_of_contributors,
+                              no_of_changed_files, no_of_changed_files, no_of_file_changes
+                              FROM `repositorystats` join repositories on repo_id = repositories.id
+                              WHERE full_name = %s""", repo_full_name)
+            self.__db.commit()
+            return self.__dictCursor.fetchone()
+
