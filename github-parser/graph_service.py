@@ -82,6 +82,8 @@ class StringKeyGraph:
         degrees = self.graph.get_out_degrees(list(self.graph.vertices()))
         weighted_degrees = self.graph.get_out_degrees(list(self.graph.vertices()), self.graph.ep.weight)
 
+        reaches, two_step_reaches = self.__calculateReaches()
+
         '''
         print("\t\t\t\t\t\t\tPagerank\tCloseness\tV_Betweeness\tEigenvector\tKatz\tAuthority\tHub")
         for v in self.graph.vertices():
@@ -111,11 +113,28 @@ class StringKeyGraph:
         statistics["hub"] = self.__calculateRepoStatistics(hub)
         statistics["local_clustering_coefficients"] = self.__calculateRepoStatistics(local_clustering_coefficients)
         statistics["central_point_dominance"] = central_point_dominance
+        statistics["reach"] = self.__calculateRepoStatistics(reaches, isPropertyMap=False)
+        statistics["two_step_reach"] = self.__calculateRepoStatistics(two_step_reaches, isPropertyMap=False)
 
         return statistics
         # graph_draw(self.sg.graph, vertex_text=self.sg.graph.vertex_index, vertex_font_size=18,
         # output_size=(1000, 1000), output="two-nodes.png")
 
+    def __calculateReaches(self):
+        reaches = []
+        two_step_reaches = []
+        for vertex in self.graph.vertices():
+            first_neighbours = self.graph.get_out_neighbours(vertex)
+            reaches.append(first_neighbours.size)
+            two_step_neighbours = set()
+            for neighbour in first_neighbours:
+                two_step_neighbours.add(neighbour)
+                second_neighbours = self.graph.get_out_neighbours(neighbour)
+                two_step_neighbours.update([elem for elem in second_neighbours])
+            two_step_neighbours.remove(vertex)
+            two_step_reaches.append(len(two_step_neighbours))
+
+        return np.array(reaches), np.array(two_step_reaches)
 
     def __calculateRepoStatistics(self, metric, isPropertyMap = True):
         statistics = collections.OrderedDict()
