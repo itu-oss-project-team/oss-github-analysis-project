@@ -3,7 +3,7 @@ import os.path
 import yaml
 from github_analysis_tool.analyzer.commit_matrix_generator import CommitMatrixGenerator
 from github_analysis_tool.analyzer.contributor_matrix_generator import ContributorMatrixGenerator
-from github_analysis_tool.analyzer.file_matrix_generator import FileMatrixGenerator
+from github_analysis_tool.analyzer.file_based_analyzer import FileBasedAnalyzer
 
 from github_analysis_tool.services.database_service import DatabaseService
 
@@ -15,7 +15,7 @@ class GenerateMatrices:
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
     def create_matrices(self):
-        file_matrix_generator = FileMatrixGenerator(self.__secret_config)
+        file_analyzer = FileBasedAnalyzer(secret_config)
         commit_matrix_generator = CommitMatrixGenerator(self.__secret_config)
         contributor_matrix_generator = ContributorMatrixGenerator(self.__secret_config)
 
@@ -27,7 +27,7 @@ class GenerateMatrices:
             repository = self.__databaseService.getRepoByFullName(repo)
             repo_id = repository['id']
 
-            file_matrix_generator.create_matrix(repo_id, repo)
+            file_analyzer.analyze_repo(repo)
             commit_matrix_generator.crate_matrix(repo_id)
             contributor_matrix_generator.create_matrix(repo_id)
             print ('\n')
