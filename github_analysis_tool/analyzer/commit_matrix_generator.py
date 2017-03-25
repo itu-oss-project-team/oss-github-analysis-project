@@ -1,8 +1,9 @@
 import time
 
-from database_service import DatabaseService
-from graph_service import StringKeyGraph
 from graph_tool.all import *
+from github_analysis_tool.services.database_service import DatabaseService
+from github_analysis_tool.services.graph_service import StringKeyGraph
+
 
 class CommitMatrixGenerator:
     def __init__(self, secret_config):

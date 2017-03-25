@@ -1,7 +1,8 @@
 import time
 
-from database_service import DatabaseService
-from db_column_constants import Columns
+from github_analysis_tool.services.database_service import DatabaseService
+
+from github_analysis_tool.services.db_column_constants import Columns
 
 class ContributorMatrixGenerator:
 

@@ -1,5 +1,6 @@
 from graph_tool.all import *
-from graph_service import StringKeyGraph
+
+from github_analysis_tool.services import StringKeyGraph
 
 sg = StringKeyGraph()
 

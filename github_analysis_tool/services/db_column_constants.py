@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 class Columns:
     class Repo:
         id = 'id'

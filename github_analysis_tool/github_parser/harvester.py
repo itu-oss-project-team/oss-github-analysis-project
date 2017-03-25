@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
-from requester import GitHubRequester
-from database_service import DatabaseService
-from _datetime import datetime
-#from datetime import datetime
-from db_column_constants import Columns
 import time
+from datetime import datetime
+
+from github_analysis_tool.github_parser.requester import GitHubRequester
+from github_analysis_tool.services.database_service import DatabaseService
+
+from github_analysis_tool.services.db_column_constants import Columns
 
 
 # End point for harvesting GitHub API
@@ -81,7 +82,6 @@ class GitHubHarvester:
             self.__retrieveIssuesofRepo(repo_url, repo_id)
             self.__retrieveCommitsOfRepo(repo_url, repo_id, time_param)
             #self.__retrieveContributorsOfRepo(repo_url, repo_id)
-            #self.__retrieveIssuesofRepo(repo_url, repo_id)
 
             # Let's mark the repo as filled with time which is beginning of fetching
             self.__databaseService.setRepoFilledAt(repo_id, start_time_string)

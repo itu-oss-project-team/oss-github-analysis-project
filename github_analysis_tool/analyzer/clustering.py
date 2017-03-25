@@ -1,9 +1,11 @@
 import os.path
+
 import pandas
-import numpy as np
-from sklearn.cluster import KMeans
-from database_service import DatabaseService
 import yaml
+from sklearn.cluster import KMeans
+
+from github_analysis_tool.services.database_service import DatabaseService
+
 
 class Clustering:
 
@@ -11,14 +13,18 @@ class Clustering:
         self.__databaseService = DatabaseService(secret_config['mysql'])
 
     def __fetch_data(self, data):
-        headers = [data._info_axis._data[1:]][0] #fetch headers
-        repos = [row[0] for row in data._values] #fetch repo names
-        features = [row[1:len(row)] for row in data._values] #fetch features.
+        headers = data.columns.values #fetch headers
+        repos = data.index.values # fetch repos
+        features = data._get_values #fetch features.
         return headers, repos, features
 
     def k_means_clustering(self, file_name, k=5):
-        data = pandas.read_csv(file_name, sep=';') #read the csv file
+        directory_path = os.path.dirname(os.path.realpath(__file__))
+        file_path = os.path.join(directory_path, file_name)
+
+        data = pandas.read_csv(file_path, sep=';', index_col=0) #read the csv file
         headers, repos, features = self.__fetch_data(data)
+
         kmeans = KMeans(n_clusters=k, random_state=0, n_init=200).fit(features) #apply kmeans algorithm
 
         #form clusters
@@ -34,11 +40,17 @@ class Clustering:
 
     def k_means_clustering_repostats(self, k=5):
         repo_stats = self.__databaseService.getRepoStats()
+        '''
+        indexes = [repo["full_name"] for repo in repo_stats] #get repo full_names to be indexes in pandas df
+        columns = []
+
+        repo_stats_df = pandas.DataFrame(data=repo_stats, index=indexes, columns=columns)
+        '''
         repo_stats_df = pandas.DataFrame.from_dict(repo_stats)
+        repo_stats_df.set_index(keys="full_name", inplace=True)
         headers, repos, features = self.__fetch_data(repo_stats_df)
 
         kmeans = KMeans(n_clusters=k, random_state=0, n_init=200).fit(features)  # apply kmeans algorithm
-
         # form clusters
         clusters = []
         for i in range(0, k):  # k cluster
@@ -52,8 +64,11 @@ class Clustering:
 
     def __exportResults(self, kmeans, headers, clusters, file_name):
 
+        head_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) #get the root directory
+        clusters_file_path = os.path.join(head_dir, 'outputs', 'clusters_' + file_name + '.txt')
+        cluster_centers_file_path = os.path.join(head_dir, 'outputs', 'cluster_centers_' + file_name + '.csv')
         #export clusters and cluster members.
-        with open("clusters_" + file_name + ".txt", "w") as out_file:
+        with open(clusters_file_path, "w") as out_file:
             for i in range(0, kmeans.n_clusters):
                 out_file.write("Cluster " + str(i) + " size: " + str(len(clusters[i])) + "\n" )
                 for repo in clusters[i]:
@@ -68,7 +83,7 @@ class Clustering:
             indexes.append("Cluster " + str(i))
 
         cluster_centers_df = pandas.DataFrame(kmeans.cluster_centers_, index=indexes, columns=headers)
-        cluster_centers_df.to_csv("cluster_centers_" + file_name + ".csv", sep=';')
+        cluster_centers_df.to_csv(cluster_centers_file_path, sep=';')
 
         return
 

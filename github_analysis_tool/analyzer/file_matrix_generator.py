@@ -1,13 +1,13 @@
-from database_service import DatabaseService
-from db_column_constants import Columns
-import time
-from graph_tool.all import *
-from graph_service import StringKeyGraph
-import os.path
-import gc
-import numpy as np
 import collections
-import operator
+import gc
+import os.path
+import time
+
+from services.database_service import DatabaseService
+from services.graph_service import StringKeyGraph
+
+from github_analysis_tool.services.db_column_constants import Columns
+
 
 class FileMatrixGenerator:
     def __init__(self, secret_config):
@@ -84,8 +84,8 @@ class FileMatrixGenerator:
         #   E;0;0;0;0;0
 
         #export to subfolder file_matrices
-        head_dir = os.path.dirname(os.path.abspath(__file__))
-        export_dir = os.path.join(head_dir, 'file_matrices') # naming file_matrices subfolder
+        head_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) #get the root directory
+        export_dir = os.path.join(head_dir, 'outputs', 'file_matrices') # naming file_matrices subfolder
 
         if not os.path.exists(export_dir): #if file_matrices subfolder does not exist
             os.makedirs(export_dir)

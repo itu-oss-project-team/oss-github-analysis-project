@@ -1,5 +1,5 @@
 
-from database_service import DatabaseService
+from github_analysis_tool.services.database_service import DatabaseService
 
 def IssueLinker(self,issueid,issueassigned,repoId):
     

@@ -1,7 +1,10 @@
-from database_service import DatabaseService
-import yaml
 import os.path
 from math import log10
+
+import yaml
+
+from github_analysis_tool.services.database_service import DatabaseService
+
 
 class Tfidf:
     def __init__(self, secret_config):

@@ -1,8 +1,10 @@
-from database_service import DatabaseService
-from datetime import datetime
-import yaml
 import os.path
+
 import dateutil.parser
+import yaml
+
+from github_analysis_tool.services.database_service import DatabaseService
+
 
 class Analysis:
     def __init__(self, secret_config):
@@ -41,12 +43,14 @@ def main():
 
     analysis = Analysis(secret_config)
 
-    repos = [line.rstrip('\n') for line in open('repositories.txt')]
+    directory_path = os.path.dirname(os.path.realpath(__file__))
+    repositories_file_path = os.path.join(directory_path, 'repositories.txt')
+    repos = [line.rstrip('\n') for line in open(repositories_file_path)]
     for repo in repos:
         print("Repo " + str(repo) + " is started.")
         analysis.setRepoStats(repo)
-        analysis.setMonthlyRepoStats(repo)
-        analysis.setFileStats(repo)
+        #analysis.setMonthlyRepoStats(repo)
+        #analysis.setFileStats(repo)
         print("Repo " + str(repo) + " is done.")
     print("Monthly repo stats and file stats analyses are done.")
 

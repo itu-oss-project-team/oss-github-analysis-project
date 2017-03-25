@@ -3,7 +3,7 @@
 import pymysql
 import dateutil.parser
 import dateutil.rrule
-from db_column_constants import Columns
+from .db_column_constants import Columns
 
 # A service class to make DB queries such as inserting new commits etc.
 class DatabaseService:

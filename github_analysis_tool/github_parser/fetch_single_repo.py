@@ -6,7 +6,7 @@ import os.path
 import sys
 import yaml
 
-from harvester import GitHubHarvester
+from github_analysis_tool.github_parser.harvester import GitHubHarvester
 
 def main(argv):
     owner = ""
