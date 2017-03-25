@@ -2,6 +2,8 @@
 # Secret configuration file
 config_secret.yaml
 
+#Outputs folder
+outputs/
 
 ### Linux stuff from  https://github.com/github/gitignore/blob/master/Global/Linux.gitignore ###
 
