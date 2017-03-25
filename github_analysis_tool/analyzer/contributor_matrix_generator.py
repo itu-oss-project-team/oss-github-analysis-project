@@ -6,8 +6,8 @@ from github_analysis_tool.services.db_column_constants import Columns
 
 class ContributorMatrixGenerator:
 
-    def __init__(self, secret_config):
-        self.__databaseService = DatabaseService(secret_config['mysql'])
+    def __init__(self):
+        self.__databaseService = DatabaseService()
 
     def create_matrix(self, repo_id):
         start_time = time.time()
@@ -20,16 +20,16 @@ class ContributorMatrixGenerator:
         
         contributor_info_array = {}
         
-        commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_ids=True)
+        commits = self.__databaseService.get_commits_of_repo(repo_id, get_only_ids=True)
         
         # For every commit in repo
         for commit_id in commits:
 
-            files = self.__databaseService.getFilesChangesOfCommit(commit_id)
-            committer = self.__databaseService.getContributorOfCommit(commit_id)
-            first_cont_date = self.__databaseService.getCommitDate(commit_id)
-            additions = self.__databaseService.getCommitAdditions(commit_id)
-            deletions = self.__databaseService.getCommitDeletions(commit_id)
+            files = self.__databaseService.get_files_changes_of_commit(commit_id)
+            committer = self.__databaseService.get_contributor_of_commit(commit_id)
+            first_cont_date = self.__databaseService.get_commit_date(commit_id)
+            additions = self.__databaseService.get_commit_additions(commit_id)
+            deletions = self.__databaseService.get_commit_deletions(commit_id)
             
             commit_files = [file[Columns.FileChanges.path] for file in files]
             committer_id = committer['author_id']
@@ -115,7 +115,7 @@ class ContributorMatrixGenerator:
         
         with open(str(repo_id) + "_nonuser_matrix.txt", "w") as out_file:
             for contributor in contributor_file_array:
-                is_github_user = self.__databaseService.checkContributorStatus(contributor)
+                is_github_user = self.__databaseService.check_contributor_status(contributor)
                 check_user_status=is_github_user['is_github_user']
                 if check_user_status == 0:
                     out_file.write("%d\n" % contributor)
@@ -132,7 +132,7 @@ class ContributorMatrixGenerator:
         
         with open(str(repo_id) + "_user_matrix.txt", "w") as out_file:
             for contributor in contributor_file_array:
-                is_github_user = self.__databaseService.checkContributorStatus(contributor)
+                is_github_user = self.__databaseService.check_contributor_status(contributor)
                 check_user_status=is_github_user['is_github_user']
                 if check_user_status == 1:
                     out_file.write("%d\n" % contributor)

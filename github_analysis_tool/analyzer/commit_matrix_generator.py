@@ -6,8 +6,8 @@ from github_analysis_tool.services.graph_service import StringKeyGraph
 
 
 class CommitMatrixGenerator:
-    def __init__(self, secret_config):
-        self.__databaseService = DatabaseService(secret_config['mysql'])
+    def __init__(self):
+        self.__databaseService = DatabaseService()
 
     def crate_matrix(self, repo_id):
         start_time = time.time()
@@ -15,11 +15,11 @@ class CommitMatrixGenerator:
         commit_matrix = {}          # {<commit1>:{<commit2>:<shared_file_changes>}
         commit_file_counts = {}     # {<commit>:<file_count>}
 
-        repo_files = self.__databaseService.getFilesOfRepo(repo_id, get_only_file_names=True)
+        repo_files = self.__databaseService.get_files_of_repo(repo_id, get_only_file_paths=True)
 
         # For every file in repo
         for file_name in repo_files:
-            commits_of_file = self.__databaseService.getCommitsOfFile(repo_id, file_name, get_only_ids=True)
+            commits_of_file = self.__databaseService.get_commits_of_file(repo_id, file_name, get_only_ids=True)
 
             for commit in commits_of_file:
                 # Count how many files are there in each commit so we can normalize our matrix later with these counts
@@ -80,7 +80,7 @@ class CommitMatrixGenerator:
     def __exportCsv(self, repo_id, commit_matrix):
         with open(str(repo_id) + "_commitmatrix.csv", "w") as out_file:
             out_file.write(";")
-            repo_commits = self.__databaseService.getCommitsOfRepo(repo_id, get_only_ids=True)
+            repo_commits = self.__databaseService.get_commits_of_repo(repo_id, get_only_ids=True)
             for commit_id in repo_commits:
                 out_file.write("%s;" % commit_id)
 

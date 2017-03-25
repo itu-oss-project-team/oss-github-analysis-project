@@ -1,12 +1,10 @@
 #!/usr/bin/python
-# -*- coding: utf-8 -*-
 
 import getopt
-import os.path
 import sys
-import yaml
 
 from github_analysis_tool.github_parser.harvester import GitHubHarvester
+
 
 def main(argv):
     owner = ""
@@ -29,16 +27,10 @@ def main(argv):
         elif opt in ("-f", "--force"):
             force = True
 
-    with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config.yaml'), 'r') as ymlfile:
-        config = yaml.load(ymlfile)
+    github_harvester = GitHubHarvester()
 
-    with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config_secret.yaml'), 'r') as ymlfile:
-        secret_config = yaml.load(ymlfile)
-
-    github_harvester = GitHubHarvester(config, secret_config)
-
-    github_harvester.fetchRepo(owner, repo, force_fetch = force)
-    #github_harvester.fetchRepo('itu-oss-project-team', 'oss-github-analysis-project', force_fetch = true)
+    #github_harvester.fetch_repo(owner, repo, force_fetch = force)
+    github_harvester.fetch_repo('itu-oss-project-team', 'oss-github-analysis-project', force_fetch = True)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

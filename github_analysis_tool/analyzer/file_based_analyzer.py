@@ -6,17 +6,17 @@ from github_analysis_tool.services.db_column_constants import Columns
 
 class FileBasedAnalyzer(AbstractAnalyzer):
 
-    def __init__(self, secret_config):
-        AbstractAnalyzer.__init__(self, "file", secret_config)
+    def __init__(self):
+        AbstractAnalyzer.__init__(self, "file")
 
     def create_matrix(self, repo_id):
         # file_matrix is a 2D dict matrix
         file_matrix = collections.OrderedDict()
-        commits = self._databaseService.getCommitsOfRepo(repo_id, get_only_ids=True)
+        commits = self._databaseService.get_commits_of_repo(repo_id, get_only_ids=True)
         repo_files = set()
         # For every commit in repo
         for commit_id in commits:
-            files = self._databaseService.getFilesChangesOfCommit(commit_id)
+            files = self._databaseService.get_files_changes_of_commit(commit_id)
             commit_files = [file[Columns.FileChanges.path] for file in files]
             repo_files.update(commit_files)
             for file_path_1 in commit_files:

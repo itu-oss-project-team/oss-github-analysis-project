@@ -2,7 +2,7 @@ import abc
 import os.path
 import time
 
-from github_analysis_tool import OUTPUT_DIR
+from github_analysis_tool import OUTPUT_DIR, secret_config
 from github_analysis_tool.services.database_service import DatabaseService
 from github_analysis_tool.services.graph_service import WeightedUndirectedGraph
 
@@ -14,9 +14,9 @@ class AbstractAnalyzer(object):
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name, secret_config):
+    def __init__(self, name):
         self._name = name
-        self._databaseService = DatabaseService(secret_config['mysql'])
+        self._databaseService = DatabaseService()
 
         self._matrices_folder_path = os.path.join(OUTPUT_DIR, self._name + '_matrices')
         if not os.path.exists(self._matrices_folder_path):
@@ -28,7 +28,7 @@ class AbstractAnalyzer(object):
         pass
 
     def analyze_repo(self, repo_full_name):
-        repository = self._databaseService.getRepoByFullName(repo_full_name)
+        repository = self._databaseService.get_repo_by_full_name(repo_full_name)
         repo_id = repository['id']
 
         start_time = time.time()
@@ -57,6 +57,7 @@ class AbstractAnalyzer(object):
         elapsed_time = time.time() - start_time
         print("---> Finishing " + self._name + " analysis for repo: " + str(repo_full_name) + ") in " + "{0:.2f}".format(elapsed_time) + " seconds.")
         print() # Empty line
+
     def __create_graph(self, network_matrix):
         graph = WeightedUndirectedGraph()
         edge_list = set()

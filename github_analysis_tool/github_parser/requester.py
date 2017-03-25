@@ -1,16 +1,21 @@
 #!/usr/bin/python
 
 import requests
+from github_analysis_tool import secret_config
 
-# A class to make API calss to GitHub
-# Adding tokens headers etc. will be handled automatically
+
 class GitHubRequester:
-    def __init__(self, github_api_config):
+    """
+    A class to make API calls to GitHub
+    Adding tokens headers etc. will be handled automatically
+    """
+    def __init__(self):
+        github_api_config = secret_config['github-api']
         self.__tokens = github_api_config['tokens']
         self.__RateLimit_Remaining = 5000
         self.__tokenOrder = 0
 
-    def makeRequest(self, url):
+    def make_request(self, url):
         if len(self.__tokens) > 1:
             if int(self.__RateLimit_Remaining) <= 1 and self.__tokenOrder == 0:
                 self.__tokenOrder = self.__tokenOrder + 1

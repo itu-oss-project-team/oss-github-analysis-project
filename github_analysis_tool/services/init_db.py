@@ -1,29 +1,28 @@
-import os.path
 import pymysql
-import yaml
+from github_analysis_tool import secret_config
 
 
 def main():
-    with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config.yaml'), 'r') as ymlfile:
-        config = yaml.load(ymlfile)
-
-    with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config_secret.yaml'), 'r') as ymlfile:
-        secret_config = yaml.load(ymlfile)
-
     mysql_config = secret_config['mysql']
     db = pymysql.connect(host=mysql_config['host'], port=mysql_config['port'], db=mysql_config['db'],
                                 user=mysql_config['user'],
                                 passwd=mysql_config['passwd'])
 
-    print("Dropping tables from \"" + mysql_config['db'] + "\"...")
-    clearDB(db)
-    print("Tables dropped")
-    print("Creating tables on \"" + mysql_config['db'] + "\"...")
-    initDB(db)
-    print("Tables created.")
+    msg = "CAUTION! This will drop all tables and probably going to cause loss of data. Are you sure want to continue?"
+    approved = input("%s (y/N) " % msg).lower() == 'y'
+
+    if not approved:
+        return
+
+    print("-->Dropping tables from \"" + mysql_config['db'] + "\"...")
+    clear_db(db)
+    print("-->Tables dropped")
+    print("-->Creating tables on \"" + mysql_config['db'] + "\"...")
+    init_db(db)
+    print("-->Tables created.")
 
 
-def clearDB(db):
+def clear_db(db):
     cursor = db.cursor()
     cursor.execute("""
             DROP TABLE IF EXISTS
@@ -33,7 +32,7 @@ def clearDB(db):
     db.commit()
 
 
-def initDB(db):
+def init_db(db):
     cursor = db.cursor()
     cursor.execute("""
       -- tables
