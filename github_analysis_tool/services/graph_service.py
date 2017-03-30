@@ -187,7 +187,7 @@ class WeightedUndirectedGraph:
         central_point_dominance = graph_tool.centrality.central_point_dominance(self.g, vertex_betweenness)
         local_clustering_coefficients = graph_tool.clustering.local_clustering(self.g, undirected=True)
         degrees = self.g.get_out_degrees(list(self.g.vertices()))
-        weighted_degrees = self.g.get_out_degrees(list(self.g.vertices()), self.g.ep.weight)
+        #weighted_degrees = self.g.get_out_degrees(list(self.g.vertices()), self.g.ep.weight)
         reaches, two_step_reaches = self.__calculate_reaches()
 
         statistics = collections.OrderedDict()
@@ -198,7 +198,7 @@ class WeightedUndirectedGraph:
 
         statistics["weight"] = self.__reduce_vertex_metrics(self.g.ep.weight)
         statistics["degree"] = self.__reduce_vertex_metrics(degrees, is_property_map=False)
-        statistics["weighted_degree"] = self.__reduce_vertex_metrics(weighted_degrees, is_property_map=False)
+        #statistics["weighted_degree"] = self.__reduce_vertex_metrics(weighted_degrees, is_property_map=False)
         statistics["pagerank"] = self.__reduce_vertex_metrics(pagerank)
         statistics["closeness"] = self.__reduce_vertex_metrics(closeness)
         statistics["vertex_betweenness"] = self.__reduce_vertex_metrics(vertex_betweenness)
@@ -206,9 +206,9 @@ class WeightedUndirectedGraph:
         statistics["authority"] = self.__reduce_vertex_metrics(authority)
         statistics["hub"] = self.__reduce_vertex_metrics(hub)
         statistics["local_clustering_coefficients"] = self.__reduce_vertex_metrics(local_clustering_coefficients)
-        statistics["central_point_dominance"] = central_point_dominance
         statistics["reach"] = self.__reduce_vertex_metrics(reaches, is_property_map=False)
         statistics["two_step_reach"] = self.__reduce_vertex_metrics(two_step_reaches, is_property_map=False)
+        statistics["central_point_dominance"] = central_point_dominance
 
         return statistics
 

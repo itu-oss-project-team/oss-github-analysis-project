@@ -30,6 +30,7 @@ class AbstractAnalyzer(object):
     def analyze_repo(self, repo_full_name):
         repository = self._databaseService.get_repo_by_full_name(repo_full_name)
         repo_id = repository['id']
+        repo_name_underscored = str(repo_full_name).replace("/", "_")
 
         start_time = time.time()
 
@@ -47,7 +48,7 @@ class AbstractAnalyzer(object):
         print("------> Graph analyzed in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
         checkpoint_time = time.time()
 
-        network_file_path = os.path.join(self._matrices_folder_path, str(repo_id) + ".csv")
+        network_file_path = os.path.join(self._matrices_folder_path, str(repo_name_underscored) + ".csv")
         self.__export_csv(network_matrix, network_file_path)
         print("------> Network matrix exported to CSV in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
 

@@ -1,6 +1,6 @@
 import os.path
 
-from github_analysis_tool.analyzer.commit_matrix_generator import CommitMatrixGenerator
+from github_analysis_tool.analyzer.commit_based_analyzer import CommitBasedAnalyzer
 from github_analysis_tool.analyzer.contributor_matrix_generator import ContributorMatrixGenerator
 from github_analysis_tool.analyzer.file_based_analyzer import FileBasedAnalyzer
 from github_analysis_tool.services.database_service import DatabaseService
@@ -12,7 +12,7 @@ class GenerateMatrices:
 
     def create_matrices(self):
         file_analyzer = FileBasedAnalyzer()
-        commit_matrix_generator = CommitMatrixGenerator()
+        commit_analyzer = CommitBasedAnalyzer()
         contributor_matrix_generator = ContributorMatrixGenerator()
 
         directory_path = os.path.dirname(os.path.realpath(__file__))
@@ -24,7 +24,7 @@ class GenerateMatrices:
             repo_id = repository['id']
 
             file_analyzer.analyze_repo(repo)
-            commit_matrix_generator.crate_matrix(repo_id)
+            commit_analyzer.analyze_repo(repo)
             contributor_matrix_generator.create_matrix(repo_id)
             print ('\n')
 
