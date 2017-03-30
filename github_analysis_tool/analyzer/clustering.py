@@ -1,9 +1,13 @@
 import os.path
 import pandas
 from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
+import numpy as np
+
+from scipy.stats import linregress
 
 from github_analysis_tool.services.database_service import DatabaseService
-
+from github_analysis_tool import OUTPUT_DIR
 
 class Clustering:
 
@@ -16,11 +20,36 @@ class Clustering:
         features = data._get_values  # fetch features.
         return headers, repos, features
 
-    def k_means_clustering(self, file_name, k=5):
-        directory_path = os.path.dirname(os.path.realpath(__file__))
-        file_path = os.path.join(directory_path, file_name)
+    def compute_cross_correlations(self, file_name):
+        data = pandas.read_csv(file_name, sep=';', index_col=0)  # read the csv file
+        headers, repos, features = self.__fetch_data(data)
 
-        data = pandas.read_csv(file_path, sep=';', index_col=0)  # read the csv file
+
+        feature_pair_list = []
+        correlations_list = []
+        for metric1 in data._series.keys():
+            for metric2 in data._series.keys():
+                #tuple of two vectors
+                feature_vector_pair = (data._series[metric1]._values, data._series[metric2]._values)
+                feature_pair = (str(metric1), str(metric2))
+                feature_pair_list.append(feature_pair)
+
+                # http://stackoverflow.com/questions/3949226/calculating-pearson-correlation-and-significance-in-python
+                # corr = np.corrcoef(feature_vector_pair[0], feature_vector_pair[1])[0][1]
+                # linear regression of two feature vectors.
+                lin = linregress(data._series[metric1]._values, data._series[metric2]._values)
+                correlations_list.append(lin.rvalue)
+
+        for i in range(0, len(correlations_list)):
+            print(feature_pair_list[i][0] + " - " + feature_pair_list[i][1] + " : "
+                  + str(correlations_list[i]))
+
+        #todo return the values
+        return
+
+    def k_means_clustering(self, file_name, k=5):
+
+        data = pandas.read_csv(file_name, sep=';', index_col=0)  # read the csv file
         headers, repos, features = self.__fetch_data(data)
 
         kmeans = KMeans(n_clusters=k, random_state=0, n_init=200).fit(features)  # apply kmeans algorithm
@@ -58,13 +87,12 @@ class Clustering:
                     repo_list.append(repos[j])  # add repo to cluster i's list.
             clusters.append(repo_list)
 
-        self.__export_results(kmeans, headers, clusters, "repo_stats")
+        self.__export_results(kmeans, headers, clusters, os.path.join(OUTPUT_DIR,"repo_stats"))
 
     def __export_results(self, kmeans, headers, clusters, file_name):
 
-        head_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # get the root directory
-        clusters_file_path = os.path.join(head_dir, 'outputs', 'clusters_' + file_name + '.txt')
-        cluster_centers_file_path = os.path.join(head_dir, 'outputs', 'cluster_centers_' + file_name + '.csv')
+        clusters_file_path = file_name + "_clusters.txt"
+        cluster_centers_file_path = file_name + "_cluster_centers.csv"
         # export clusters and cluster members.
         with open(clusters_file_path, "w") as out_file:
             for i in range(0, kmeans.n_clusters):
@@ -87,6 +115,7 @@ class Clustering:
 
 
 clustering = Clustering()
-# TODO Give changed path
-clustering.k_means_clustering("file_metrics.csv", k=5)
+file_metrics_path = os.path.join(OUTPUT_DIR,"file_metrics.csv")
+clustering.compute_cross_correlations(file_metrics_path)
+clustering.k_means_clustering(file_metrics_path, k=10)
 clustering.k_means_clustering_repostats(k=10)
