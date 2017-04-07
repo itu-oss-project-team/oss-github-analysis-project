@@ -1,4 +1,6 @@
 import os.path
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from github_analysis_tool.analyzer.commit_based_analyzer import CommitBasedAnalyzer
 from github_analysis_tool.analyzer.contributor_matrix_generator import ContributorMatrixGenerator

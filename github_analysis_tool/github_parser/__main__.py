@@ -3,7 +3,8 @@
 
 import getopt
 import sys
-
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from github_analysis_tool.github_parser.harvester import GitHubHarvester
 from github_analysis_tool import secret_config
 

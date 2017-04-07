@@ -1,6 +1,9 @@
 #!/usr/bin/python
-
+import os
 import requests
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from github_analysis_tool import secret_config
 
 

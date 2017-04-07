@@ -3,7 +3,8 @@ import pandas
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
 import numpy as np
-
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from scipy.stats import linregress
 
 from github_analysis_tool.services.database_service import DatabaseService
