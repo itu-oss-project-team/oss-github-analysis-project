@@ -251,7 +251,7 @@ desandro/masonry
 gruntjs/grunt
 HubSpot/pace
 php/php-src
-CamDavidsonPilon/Probabilistic-Programming-and-Bay...
+CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers
 bitcoin/bitcoin
 ggreer/the_silver_searcher
 dotnet/corefx
