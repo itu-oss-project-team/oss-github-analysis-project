@@ -1,9 +1,10 @@
 
 from database_service import DatabaseService
 
-def IssueLinker(self,issueid,closedby,repoId):
+
+def IssueLinker(issueid,repoId,secret_config):
     
-    self.database = DatabaseService(secret_config['mysql'])
+    database = DatabaseService(secret_config['mysql'])
     commits = database.getCommitsOfRepo(repoId)
     keywords = ["Fix", "fixed", "edit", "edited", "modify", "modified", "correct", "corrected","close","closed","resolves","resolved","bug","issue"]
     
@@ -28,12 +29,17 @@ def IssueLinker(self,issueid,closedby,repoId):
                         keywordfound = True
                         print ("Found keyword")
                    
-                        
-        if commit.author.login == closedby.login:
-            syntactic +=1;
+        
+    
+    print("Commit: " + str(commits["id"]))                    
+        #if commit.author.login == closedby.login:
+        #    syntactic +=1;
            
-        if semantic == 2 and syntactic == 1:
-            print(commit.id)
+           
+        #if semantic == 2 and syntactic == 1:
+         #   print(commit.id)
     
         
-     
+
+    
+ 
