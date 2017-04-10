@@ -41,9 +41,9 @@ def main(argv):
         secret_config = yaml.load(ymlfile)
     
     github_harvester = GitHubHarvester(config, secret_config)     
-    github_harvester.fetchRepos(star, since, until, force)
+    #github_harvester.fetchRepos(star, since, until, force)
     #github_harvester.fetchRepos("10000", "2016-01-01T00:00:00Z", "2017-04-01T00:00:00Z", True)
-    #github_harvester.fetchRepo("FreeCodeCamp","FreeCodeCamp", "2016-01-01T00:00:00Z", "2017-04-01T00:00:00Z", True)
+    github_harvester.fetchRepo("FreeCodeCamp","FreeCodeCamp", "2016-01-01T00:00:00Z", "2017-04-01T00:00:00Z", True)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

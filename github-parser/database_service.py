@@ -570,3 +570,7 @@ class DatabaseService:
             self.__dictCursor.execute(""" INSERT INTO issues (id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """, (id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at))
             self.__db.commit()
+    def checkifIssueExists(self,id):
+            self.__dictCursor.execute(""" SELECT * from issues WHERE ID = %s """,(id))
+            self.__db.commit()
+            return self.__dictCursor.fetchall()
