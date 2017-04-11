@@ -1,7 +1,6 @@
 import os.path
 import pandas
 from sklearn.cluster import KMeans
-from sklearn.mixture import GaussianMixture
 import numpy as np
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -9,6 +8,7 @@ from scipy.stats import linregress
 
 from github_analysis_tool.services.database_service import DatabaseService
 from github_analysis_tool import OUTPUT_DIR
+
 
 class Clustering:
 
@@ -20,33 +20,6 @@ class Clustering:
         repos = data.index.values  # fetch repos
         features = data._get_values  # fetch features.
         return headers, repos, features
-
-    def compute_cross_correlations(self, file_name):
-        data = pandas.read_csv(file_name, sep=';', index_col=0)  # read the csv file
-        headers, repos, features = self.__fetch_data(data)
-
-
-        feature_pair_list = []
-        correlations_list = []
-        for metric1 in data._series.keys():
-            for metric2 in data._series.keys():
-                #tuple of two vectors
-                feature_vector_pair = (data._series[metric1]._values, data._series[metric2]._values)
-                feature_pair = (str(metric1), str(metric2))
-                feature_pair_list.append(feature_pair)
-
-                # http://stackoverflow.com/questions/3949226/calculating-pearson-correlation-and-significance-in-python
-                # corr = np.corrcoef(feature_vector_pair[0], feature_vector_pair[1])[0][1]
-                # linear regression of two feature vectors.
-                lin = linregress(data._series[metric1]._values, data._series[metric2]._values)
-                correlations_list.append(lin.rvalue)
-
-        for i in range(0, len(correlations_list)):
-            print(feature_pair_list[i][0] + " - " + feature_pair_list[i][1] + " : "
-                  + str(correlations_list[i]))
-
-        #todo return the values
-        return
 
     def k_means_clustering(self, file_name, k=5):
 
@@ -113,10 +86,3 @@ class Clustering:
         cluster_centers_df.to_csv(cluster_centers_file_path, sep=';')
 
         return
-
-
-clustering = Clustering()
-file_metrics_path = os.path.join(OUTPUT_DIR,"file_metrics.csv")
-clustering.compute_cross_correlations(file_metrics_path)
-clustering.k_means_clustering(file_metrics_path, k=10)
-clustering.k_means_clustering_repostats(k=10)
