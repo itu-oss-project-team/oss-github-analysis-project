@@ -2,6 +2,7 @@ import abc
 import os.path
 import time
 import sys
+import logging
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from github_analysis_tool import OUTPUT_DIR, secret_config
@@ -24,6 +25,9 @@ class AbstractAnalyzer(object):
         if not os.path.exists(self._matrices_folder_path):
             os.makedirs(self._matrices_folder_path)
         self._metrics_file_path = os.path.join(OUTPUT_DIR, self._name + "_metrics.csv")
+        logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO,
+                            filename=os.path.join(OUTPUT_DIR, "generate_matrices_log.log"))
+
 
     @abc.abstractmethod
     def create_matrix(self, repo_id) -> dict:
@@ -37,25 +41,32 @@ class AbstractAnalyzer(object):
         start_time = time.time()
 
         print("---> Starting " + self._name + " analysis for repo: " + repo_full_name)
+        logging.info("---> Starting " + self._name + " analysis for repo: " + repo_full_name)
 
         network_matrix = self.create_matrix(repo_id)
-        print("------> Matrix generated in " + "{0:.2f}".format(time.time() - start_time) + " seconds.")
+        print("[" + repo_full_name + "]: " + self._name + " Matrix generated in " + "{0:.2f}".format(time.time() - start_time) + " seconds.")
+        logging.info("[" + repo_full_name + "]: " + self._name + " Matrix generated in " + "{0:.2f}".format(time.time() - start_time) + " seconds.")
         checkpoint_time = time.time()
 
         graph = self.__create_graph(network_matrix)  # create graph of the matrix.
-        print("------> Graph generated in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
+        print("[" + repo_full_name + "]: " + self._name + " Graph generated in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
+        logging.info("[" + repo_full_name + "]: " + self._name + " Graph generated in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
         checkpoint_time = time.time()
 
         repo_metrics = graph.calculate_metrics()
-        print("------> Graph analyzed in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
+        print("[" + repo_full_name + "]: " + self._name + " Graph analyzed in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
+        logging.info("[" + repo_full_name + "]: " + self._name + " Graph analyzed in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
         checkpoint_time = time.time()
 
         network_file_path = os.path.join(self._matrices_folder_path, str(repo_name_underscored) + ".csv")
         self.__export_csv(network_matrix, network_file_path)
-        print("------> Network matrix exported to CSV in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
+        print("[" + repo_full_name + "]: " + self._name + " Network matrix exported to CSV in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
+        logging.info("[" + repo_full_name + "]: " + self._name + " Network matrix exported to CSV in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
+        checkpoint_time = time.time()
 
         graph.export_metrics(repo_metrics, repo_full_name, self._metrics_file_path)
-        print("------> Repo metrics exported to CSV in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
+        print("[" + repo_full_name + "]: " + self._name + " Repo metrics exported to CSV in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
+        logging.info("[" + repo_full_name + "]: " + self._name + " Repo metrics exported to CSV in " + "{0:.2f}".format(time.time() - checkpoint_time) + " seconds.")
 
         elapsed_time = time.time() - start_time
         print("---> Finishing " + self._name + " analysis for repo: " + str(repo_full_name) + ") in " + "{0:.2f}".format(elapsed_time) + " seconds.")
