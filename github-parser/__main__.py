@@ -9,7 +9,7 @@ import yaml
 #sys.setdefaultencoding('UTF-8')
 
 from harvester import GitHubHarvester
-
+from Szz import IssueLinker
 
 def main(argv):
     since = None
@@ -40,7 +40,9 @@ def main(argv):
     with open(os.path.join(os.path.dirname(__file__), os.pardir, 'config_secret.yaml'), 'r') as ymlfile:
         secret_config = yaml.load(ymlfile)
     
-    github_harvester = GitHubHarvester(config, secret_config)     
+    
+    github_harvester = GitHubHarvester(config, secret_config)
+    #IssueLinker("13446",1,secret_config)
     github_harvester.fetchRepos(star, since, until, force)
     #github_harvester.fetchRepos("10000", "2016-01-01T00:00:00Z", "2017-04-01T00:00:00Z", True)
     #github_harvester.fetchRepo("FreeCodeCamp","FreeCodeCamp", "2016-01-01T00:00:00Z", "2017-04-01T00:00:00Z", True)

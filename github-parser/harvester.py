@@ -2,7 +2,7 @@
 
 from requester import GitHubRequester
 from database_service import DatabaseService
-from _datetime import datetime
+from datetime import datetime
 #from datetime import datetime
 from db_column_constants import Columns
 import time
@@ -261,7 +261,7 @@ class GitHubHarvester:
         index = 1
 
         while(1):
-            IssuesURL = repoURL + "/issues?page="+ str(index) + "&per_page=100"
+            IssuesURL = repoURL + "/issues/events?page="+ str(index) + "&per_page=100"
             result = self.__requester.makeRequest(IssuesURL)
             print("Issues page: " + str(index))
             if(result.status_code == 200):
@@ -271,36 +271,38 @@ class GitHubHarvester:
                 if not resultJson:
                     break
                 else:
-                    for issues in resultJson:
-                            id = issues["id"]
-                            url = issues["url"]
-                            number = issues["number"]
-                            title =  issues["title"]
-                            repo_id = repo_id
-                            reporter_id = issues["user"]["id"]
-                            assignee_id = None
-                            #assignee_id = issues["assignee"]
-                            #if assignee_id:
-                              # assignee_id =assignee_id["id"]
-                            state = issues["state"]
-                            comments = issues["comments"]
-                            created_at = str(issues["created_at"])[:10]
-                            updated_at = str(issues["updated_at"])[:10]
-                            print(str(issues["closed_at"]))
-                            closed_at = "0000-00-00"
-                            if (str(issues["closed_at"]) == "None"):
-                                closed_at = "2000-01-01 00:00:00"
-                            else:
-                                 closed_at = str(issues["closed_at"])[:10]
-
-
-
-                            print(issues["number"])
-                            print(title)
-                            print (closed_at)
-                            self.__databaseService.insertIssue(id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at)
-
-                            print (str(url))
+                    for events in resultJson:
+                            if events["event"] == "closed":
+                                issues = events["issue"]
+                                id = issues["id"]
+                                url = issues["url"]
+                                number = issues["number"]
+                                title =  issues["title"]
+                                repo_id = repo_id
+                                reporter_id = issues["user"]["id"]
+                                assignee_id = None
+                                #assignee_id = issues["assignee"]
+                                #if assignee_id:
+                                  # assignee_id =assignee_id["id"]
+                                state = issues["state"]
+                                comments = issues["comments"]
+                                created_at = str(issues["created_at"])[:10]
+                                updated_at = str(issues["updated_at"])[:10]
+                                print(str(issues["closed_at"]))
+                                closed_at = "0000-00-00"
+                                if (str(issues["closed_at"]) == "None"):
+                                    closed_at = "2000-01-01 00:00:00"
+                                else:
+                                     closed_at = str(issues["closed_at"])[:10]
+    
+    
+    
+                                print(issues["number"])
+                                print(title)
+                                if self.__databaseService.checkifIssueExists(id) is None: 
+                                    self.__databaseService.insertIssue(id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at)
+    
+                                print (str(url))
 
             else: # Request gave an error
                 print("Error while retrieving: " + IssuesURL)

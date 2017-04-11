@@ -4,8 +4,6 @@ import pymysql
 import dateutil.parser
 import dateutil.rrule
 from db_column_constants import Columns
-from datetime import datetime
-
 
 # A service class to make DB queries such as inserting new commits etc.
 class DatabaseService:
@@ -555,14 +553,14 @@ class DatabaseService:
         # result of all repos
         if not repo_full_name:
             self.__dictCursor.execute("""SELECT full_name, no_of_commits, no_of_contributors,
-                              no_of_changed_files, no_of_changed_files, no_of_file_changes
+                              no_of_changed_files, no_of_file_changes
                               FROM `repositorystats` join repositories on repo_id = repositories.id""")
             self.__db.commit()
             return self.__dictCursor.fetchall()
         # result of a single repo
         else:
             self.__dictCursor.execute("""SELECT full_name, no_of_commits, no_of_contributors,
-                              no_of_changed_files, no_of_changed_files, no_of_file_changes
+                              no_of_changed_files, no_of_file_changes
                               FROM `repositorystats` join repositories on repo_id = repositories.id
                               WHERE full_name = %s""", repo_full_name)
             self.__db.commit()
@@ -572,3 +570,7 @@ class DatabaseService:
             self.__dictCursor.execute(""" INSERT INTO issues (id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """, (id,url,number,title,repo_id,reporter_id, assignee_id, state,comments, created_at, updated_at, closed_at))
             self.__db.commit()
+    def checkifIssueExists(self,id):
+            self.__dictCursor.execute(""" SELECT * from issues WHERE ID = %s """,(id))
+            self.__db.commit()
+            return self.__dictCursor.fetchall()
