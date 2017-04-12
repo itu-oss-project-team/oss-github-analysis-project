@@ -126,6 +126,7 @@ def init_db(db):
             created_at timestamp NULL,
             updated_at timestamp NULL,
             closed_at timestamp NULL,
+            closedbyid int NULL,
             CONSTRAINT issues_pk PRIMARY KEY (id)
         ) ENGINE InnoDB CHARACTER SET utf8mb4;
 

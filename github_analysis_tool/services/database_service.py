@@ -175,11 +175,11 @@ class DatabaseService:
         self.__db.commit()
 
     def insert_issue(self, id, url, number, title, repo_id, reporter_id, assignee_id, state, comments, created_at,
-                     updated_at, closed_at):
-        self.__dict_cursor.execute("""INSERT INTO issues (id,url,number,title,repo_id,reporter_id, assignee_id, state, comments, created_at, updated_at, closed_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """, (id, url, number, title, repo_id, reporter_id,
+                     updated_at, closed_at,closedbyid):
+        self.__dict_cursor.execute("""INSERT INTO issues (id,url,number,title,repo_id,reporter_id, assignee_id, state, comments, created_at, updated_at, closed_at,closedbyid)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """, (id, url, number, title, repo_id, reporter_id,
                                                                    assignee_id, state, comments, created_at, updated_at,
-                                                                   closed_at))
+                                                                   closed_at,closedbyid))
         self.__db.commit()
 
     # Check functions
@@ -401,7 +401,11 @@ class DatabaseService:
 
         result = self.__dict_cursor.fetchone()
         return result["language"]
-
+    
+    def check_if_issue_exists(self, issueid):
+        self.__dict_cursor.execute("""SELECT * FROM issues WHERE id = %s """,issueid)
+        self.__db.commit()
+        return self.__dict_cursor.fetchone()
     # Set functions
 
     def set_repo_filled_at(self, repo_id, filled_time):
