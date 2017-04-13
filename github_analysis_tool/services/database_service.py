@@ -175,11 +175,11 @@ class DatabaseService:
         self.__db.commit()
 
     def insert_issue(self, id, url, number, title, repo_id, reporter_id, assignee_id, state, comments, created_at,
-                     updated_at, closed_at):
-        self.__dict_cursor.execute("""INSERT INTO issues (id,url,number,title,repo_id,reporter_id, assignee_id, state, comments, created_at, updated_at, closed_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """, (id, url, number, title, repo_id, reporter_id,
+                     updated_at, closed_at,closedbyid):
+        self.__dict_cursor.execute("""INSERT INTO issues (id,url,number,title,repo_id,reporter_id, assignee_id, state, comments, created_at, updated_at, closed_at,closedbyid)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) """, (id, url, number, title, repo_id, reporter_id,
                                                                    assignee_id, state, comments, created_at, updated_at,
-                                                                   closed_at))
+                                                                   closed_at,closedbyid))
         self.__db.commit()
 
     # Check functions
@@ -323,6 +323,12 @@ class DatabaseService:
             self.__db.commit()
             files = self.__dict_cursor.fetchall()
         return files
+    
+    def get_files_of_files_changes_of_commit(self, commit_id, get_only_ids=False):
+        self.__dict_cursor.execute(""" SELECT file_id FROM filechanges WHERE commit_id = %s""", commit_id)
+        self.__db.commit()
+        fileids = self.__dict_cursor.fetchall()
+        return fileids
 
     def get_commits_of_file(self, repo_id, file_name, get_only_ids=False):
         if get_only_ids:
@@ -401,7 +407,11 @@ class DatabaseService:
 
         result = self.__dict_cursor.fetchone()
         return result["language"]
-
+    
+    def check_if_issue_exists(self, issueid):
+        self.__dict_cursor.execute("""SELECT * FROM issues WHERE id = %s """,issueid)
+        self.__db.commit()
+        return self.__dict_cursor.fetchone()
     # Set functions
 
     def set_repo_filled_at(self, repo_id, filled_time):
