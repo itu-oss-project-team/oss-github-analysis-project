@@ -2,18 +2,21 @@ import os.path
 import pandas
 import numpy as np
 import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from scipy.stats import linregress
 
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from github_analysis_tool.analyzer.clustering import Clustering
 from github_analysis_tool.analyzer.classification import Classification
+from github_analysis_tool.services.database_service import DatabaseService
 from github_analysis_tool import OUTPUT_DIR
 
 
 class NetworkAnalysis:
 
     def __init__(self):
-        self.classification = Classification()
+        repo_languages_data = pandas.read_csv(os.path.join(OUTPUT_DIR, "repo_languages.csv"), sep=';', index_col=0, header=None)
+        self.repo_languages = repo_languages_data.to_dict()[1]
+        #self.classification = Classification()
         self.clustering = Clustering()
 
     def __fetch_data(self, data):
@@ -68,17 +71,27 @@ class NetworkAnalysis:
         return
 
     def do_classification(self, file_path):
-        self.classification.knn(file_metrics_path, networkAnalysis.classification.set_star_labels)
+        #self.classification.knn(file_metrics_path, networkAnalysis.classification.set_star_labels)
+        print("none")
 
-    def do_clustering(self, file_path):
-        k = 10
-        self.clustering.k_means_clustering(file_metrics_path, k=k)
-        self.clustering.k_means_clustering_repostats(k=k)
-
-networkAnalysis = NetworkAnalysis()
-file_metrics_path = os.path.join(OUTPUT_DIR, "file_metrics.csv")
+    def do_clustering(self, data_frame, data_set_name):
+        # Try different clustering algorithms with different parameters
+        print("----> Analyzing data set: " + data_set_name)
+        out_path = os.path.join(OUTPUT_DIR, "clustering", data_set_name)
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
+        for i in range(3, 9):
+            print("------> K-Means clustering with # of clusters: " + str(i))
+            self.clustering.k_means_clustering(out_path, data_frame, number_of_clusters=i)
+        for i in range(9, 15):
+            print("------> Agglomerative clustering with # of clusters: " + str(i))
+            self.clustering.agglomerative_clustering(out_path, data_frame, number_of_clusters=i)
+        for i in range(2, 8, 2):
+            for j in range(2, 5):
+                print("------> HDBSCAN clustering with min clusters: " + str(i) + ", min samples: " + str(j))
+                self.clustering.hdbscan_clustering(out_path, data_frame, min_cluster_size=i, min_samples=j)
 
 # networkAnalysis.compute_cross_correlations(file_metrics_path)
 # networkAnalysis.compute_repo_correlations(file_metrics_path)
 
-networkAnalysis.do_classification(file_metrics_path)
+# networkAnalysis.do_classification(file_metrics_path)
