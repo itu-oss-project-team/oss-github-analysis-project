@@ -3,6 +3,7 @@ import pandas
 import numpy as np
 import sys
 from scipy.stats import linregress
+import collections
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from github_analysis_tool.analyzer.clustering import Clustering
@@ -14,8 +15,8 @@ from github_analysis_tool import OUTPUT_DIR
 class NetworkAnalysis:
 
     def __init__(self):
-        repo_languages_data = pandas.read_csv(os.path.join(OUTPUT_DIR, "repo_languages.csv"), sep=';', index_col=0, header=None)
-        self.repo_languages = repo_languages_data.to_dict()[1]
+        #repo_languages_data = pandas.read_csv(os.path.join(OUTPUT_DIR, "repo_languages.csv"), sep=';', index_col=0, header=None)
+        #self.repo_languages = repo_languages_data.to_dict()[1]
         self.classification = Classification()
         self.clustering = Clustering()
 
@@ -25,55 +26,36 @@ class NetworkAnalysis:
         features = data._get_values  # fetch features.
         return headers, repos, features
 
-    def compute_repo_correlations(self, file_name):
-        data = pandas.read_csv(file_name, sep=';', index_col=0)  # read the csv file
-        headers, repos, features = self.__fetch_data(data)
-
-        for i in range(0, len(features)):
-            corrs = []
-            for j in range(i, len(features)):
-                lin = linregress(features[i], features[j])
-                print(repos[i], repos[j], str(lin.rvalue))
-
     def compute_cross_correlations(self, file_name):
         data = pandas.read_csv(file_name, sep=';', index_col=0)  # read the csv file
-        headers, repos, features = self.__fetch_data(data)
 
-        feature_pair_list = []
-        correlations_list = []
-        avg_correlations = {}
+        correlations = collections.OrderedDict()
+        avg_correlations = collections.OrderedDict()
+
         for metric1 in data._series.keys():
+            correlations[metric1] = collections.OrderedDict()
             corrs = []
             for metric2 in data._series.keys():
-                if metric1 == metric2:
-                    continue
-
-                #tuple of two vectors
-                feature_vector_pair = (data._series[metric1]._values, data._series[metric2]._values)
-                feature_pair = (str(metric1), str(metric2))
-                feature_pair_list.append(feature_pair)
-
-                # http://stackoverflow.com/questions/3949226/calculating-pearson-correlation-and-significance-in-python
+            # http://stackoverflow.com/questions/3949226/calculating-pearson-correlation-and-significance-in-python
                 # corr = np.corrcoef(feature_vector_pair[0], feature_vector_pair[1])[0][1]
                 # linear regression of two feature vectors.
                 lin = linregress(data._series[metric1]._values, data._series[metric2]._values)
-                correlations_list.append(lin.rvalue)
+                correlations[metric1][metric2] = lin.rvalue
                 corrs.append(lin.rvalue)
 
             avg_correlations[metric1] = np.mean(corrs)
 
-
-        for i in range(0, len(correlations_list)):
-            print(feature_pair_list[i][0] + " - " + feature_pair_list[i][1] + " : "
-                  + str(correlations_list[i]))
-
-        '''
-        with open(file_name[:-4] + "_avg_correlations.txt", "w") as output_file:
-            for metric in sorted(avg_correlations, key=avg_correlations.get, reverse=True):
-                output_file.write(metric + " : " + str(avg_correlations[metric]) + "\n")
-                print(metric, ":", avg_correlations[metric])
-        '''
-        # todo return the values
+        output_file_path = file_name[:-4] + "_correlation_matrix.csv"
+        with open(output_file_path, "w") as output:
+            output.write(";")
+            for metric1 in correlations:
+                output.write(metric1 + ";")
+            output.write("\n")
+            for metric1 in correlations:
+                output.write(metric1 + ";")
+                for metric2 in correlations[metric1]:
+                    output.write(str(correlations[metric1][metric2]) + ";")
+                output.write("\n")
         return
 
     def do_classification(self, file_path):
@@ -107,8 +89,8 @@ networkAnalysis = NetworkAnalysis()
 file_metrics_path = os.path.join(OUTPUT_DIR, "file_metrics.csv")
 commit_metrics_path = os.path.join(OUTPUT_DIR, "commit_metrics.csv")
 
-# networkAnalysis.compute_cross_correlations(file_metrics_path)
-# networkAnalysis.compute_cross_correlations(commit_metrics_path)
+networkAnalysis.compute_cross_correlations(file_metrics_path)
+networkAnalysis.compute_cross_correlations(commit_metrics_path)
 
 networkAnalysis.do_classification(file_metrics_path)
 networkAnalysis.do_classification(commit_metrics_path)
