@@ -323,6 +323,12 @@ class DatabaseService:
             self.__db.commit()
             files = self.__dict_cursor.fetchall()
         return files
+    
+    def get_files_of_files_changes_of_commit(self, commit_id, get_only_ids=False):
+        self.__dict_cursor.execute(""" SELECT file_id FROM filechanges WHERE commit_id = %s""", commit_id)
+        self.__db.commit()
+        fileids = self.__dict_cursor.fetchall()
+        return fileids
 
     def get_commits_of_file(self, repo_id, file_name, get_only_ids=False):
         if get_only_ids:

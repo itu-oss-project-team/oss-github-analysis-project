@@ -56,7 +56,7 @@ class GitHubHarvester:
         # Repo can be new as it's first info
         start_time_string = str(datetime.now())
         start_time = time.time()
-        self.__retrieve_issues_of_repo(repo_url, repo_id)
+        #self.__retrieve_issues_of_repo(repo_url, repo_id)
         self.__retrieve_commits_of_repo(repo_url, repo_id, time_param)
         #self.__retrieveIssuesofRepo(repo_url, repo_id)
         # Let's mark the repo as filled with time which is beginning of fetching
@@ -264,9 +264,9 @@ class GitHubHarvester:
                 print("Status code: " + str(result.status_code))
 
     def __retrieve_issues_of_repo(self, repo_url, repo_id):
-        index = 1
-
-        while True:
+        index = 400
+        paginationend = True
+        while paginationend:
             events_url = repo_url + "/issues/events?page=" + str(index) + "&per_page=100"
             result = self.__requester.make_request(events_url)
             print("Issues page: " + str(index))
@@ -276,8 +276,12 @@ class GitHubHarvester:
 
                 if not result_json:
                     break
-
+                
                 for events in result_json:
+                    if events["documentation_url"] is not None:
+                        pagionaionend = False
+                        break
+                    
                     if events["event"] == "closed":
                         print(events["url"])
                         if events["actor"] is not None:
