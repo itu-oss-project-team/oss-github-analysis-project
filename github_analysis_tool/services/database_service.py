@@ -607,7 +607,7 @@ class DatabaseService:
             return self.__dict_cursor.fetchall()
         # result of a single repo
         else:
-            self.__dict_cursor.execute("""SELECT full_name, no_of_commits, no_of_contributors,
+            self.__dict_cursor.execute("""SELECT no_of_commits, no_of_contributors,
                               no_of_changed_files, no_of_file_changes
                               FROM `repositorystats` JOIN repositories ON repo_id = repositories.id
                               WHERE full_name = %s""", repo_full_name)

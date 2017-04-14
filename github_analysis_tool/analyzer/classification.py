@@ -6,6 +6,7 @@ from sklearn.feature_selection import *
 from sklearn.svm import *
 import numpy as np
 import sys
+import collections
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from github_analysis_tool.services.database_service import DatabaseService
@@ -24,7 +25,7 @@ class Classification:
 
     def set_star_labels(self, repos):
         labels = []
-        repo_stars_pair = {}
+        repo_stars_pair = collections.OrderedDict()
         for repo in repos:
             result = self.__databaseService.get_repo_by_full_name(repo)
             stars = result["stargazers_count"]
@@ -48,7 +49,7 @@ class Classification:
 
     def set_no_of_filechanges_labels(self, repos):
         labels = []
-        repo_no_of_filechanges_pair = {}
+        repo_no_of_filechanges_pair = collections.OrderedDict()
         for repo in repos:
             result = self.__databaseService.get_repo_stats(repo_full_name=repo)
             no_of_filechanges = result["no_of_file_changes"]
@@ -82,7 +83,7 @@ class Classification:
 
     def set_no_of_files_labels(self, repos):
         labels = []
-        repo_no_of_files_pair = {}
+        repo_no_of_files_pair = collections.OrderedDict()
         for repo in repos:
             result = self.__databaseService.get_repo_stats(repo_full_name=repo)
             no_of_files = result["no_of_changed_files"]
@@ -112,7 +113,7 @@ class Classification:
 
     def set_language_labels(self, repos):
         labels = []
-        repo_language_pair = {}
+        repo_language_pair = collections.OrderedDict()
         for repo in repos:
             language = self.__databaseService.get_language_by_repo_full_name(repo)
             repo_language_pair[repo] = language
@@ -140,7 +141,7 @@ class Classification:
 
     def set_no_of_commits_labels(self, repos):
         labels = []
-        repo_no_of_commits_pair = {}
+        repo_no_of_commits_pair = collections.OrderedDict()
         for repo in repos:
             result = self.__databaseService.get_repo_stats(repo_full_name=repo)
             no_of_commits = result["no_of_commits"]
@@ -165,19 +166,19 @@ class Classification:
 
         return labels, repo_no_of_commits_pair
 
-    def knn(self, data, file_name, message, set_labels, k=15):
+    def knn(self, data, message, set_labels, k=15):
         headers, repos, features = self.__fetch_data(data)
         labels, repo_class_pair = set_labels(repos)
 
         no_of_classes = len(np.unique(labels))
 
-        new_features = self.__feature_selection(features, labels)
+        # new_features = self.__feature_selection(features, labels)
         # training_set, test_set, training_labels, test_labels = train_test_split(new_features, labels, test_size=0.3)
 
         classifier = neighbors.KNeighborsClassifier(k, weights='distance')
         # classifier.fit(training_set, training_labels)
         # scores = cross_val_score(classifier, features, labels, cv=5)
-        predicted = cross_val_predict(classifier, new_features, labels, cv=5)
+        predicted = cross_val_predict(classifier, features, labels, cv=5)
 
         success = 0
         fail = 0
@@ -195,8 +196,9 @@ class Classification:
             i += 1
 
         print(success, fail, success/(success+fail))
+        output_path = os.path.join(OUTPUT_DIR, message + ".txt")
 
-        with open(file_name[:-4] + "_" + message + ".txt", "w") as output_file:
+        with open(output_path, "w") as output_file:
             output_file.write("Success: " + str(success) + " Fail: " + str(fail))
             output_file.write( " : " + str(success/(success+fail)) + "\n\n")
             for i in range(0, len(result_classes)):
@@ -204,7 +206,6 @@ class Classification:
                 for element in result_classes[i]:
                     output_file.write(str(element[0]) + " - " + str(element[1]) + "\n")
                 output_file.write("\n")
-
 
         '''
         success = 0
@@ -220,7 +221,7 @@ class Classification:
         print(success, fail)
         '''
 
-    def svc(self, data, file_name, message, set_labels):
+    def svc(self, data, message, set_labels):
         headers, repos, features = self.__fetch_data(data)
         labels, repo_class_pair = set_labels(repos)
 
@@ -247,8 +248,9 @@ class Classification:
             i += 1
 
         print(success, fail, success / (success + fail))
+        output_path = os.path.join(OUTPUT_DIR, message + ".txt")
 
-        with open(file_name[:-4] + "_" + message + ".txt", "w") as output_file:
+        with open(output_path, "w") as output_file:
             output_file.write("Success: " + str(success) + " Fail: " + str(fail))
             output_file.write(" : " + str(success / (success + fail)) + "\n\n")
             for i in range(0, len(result_classes)):

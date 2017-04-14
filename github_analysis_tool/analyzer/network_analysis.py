@@ -19,6 +19,7 @@ class NetworkAnalysis:
         #self.repo_languages = repo_languages_data.to_dict()[1]
         self.classification = Classification()
         self.clustering = Clustering()
+        self.datatabase_service = DatabaseService()
 
     def __fetch_data(self, data):
         headers = data.columns.values  # fetch headers
@@ -58,13 +59,39 @@ class NetworkAnalysis:
                 output.write("\n")
         return
 
-    def do_classification(self, file_path):
+    def generate_data_frame(self, file_path, file_path_2=None):
         data = pandas.read_csv(file_path, sep=';', index_col=0)  # read the csv file
-        self.classification.knn(data, file_path, "knn_star_classification", self.classification.set_star_labels)
-        self.classification.knn(data, file_path, "knn_language_classification", self.classification.set_language_labels)
-        self.classification.knn(data, file_path, "knn_no_of_files_classification", self.classification.set_no_of_files_labels)
-        self.classification.knn(data, file_path, "knn_no_of_file_changes_classification", self.classification.set_no_of_filechanges_labels)
-        self.classification.knn(data, file_path, "knn_no_of_commits_classification", self.classification.set_no_of_commits_labels)
+        if file_path_2 is not None:
+            data2 = pandas.read_csv(file_path_2, sep=';', index_col=0)
+            new_data_frame = pandas.concat([data, data2], axis=1)
+            new_data_frame.dropna(inplace=True)
+            return new_data_frame
+        else:
+            return data
+
+    def append_repo_stats(self, data):
+        repos = data.index.values
+        repo_stats = {}
+        for repo in repos:
+            repo_stats[repo] = self.datatabase_service.get_repo_stats(repo)
+
+        repo_stats_df = pandas.DataFrame().from_dict(repo_stats, orient='index')
+        new_data_frame = pandas.concat([data, repo_stats_df], axis=1)
+        new_data_frame.dropna(inplace=True)
+        return new_data_frame
+
+
+    def do_classification(self, data, file_path=None):
+        message = ""
+        if file_path is not None:
+            dir, file_name = os.path.split(file_path)
+            message += file_name[:-4] + "_"
+
+        #self.classification.knn(data, message + "knn_star_classification", self.classification.set_star_labels)
+        self.classification.knn(data, message + "knn_language_classification", self.classification.set_language_labels)
+        #self.classification.knn(data, message + "knn_no_of_files_classification", self.classification.set_no_of_files_labels)
+        #self.classification.knn(data, message + "knn_no_of_file_changes_classification", self.classification.set_no_of_filechanges_labels)
+        #self.classification.knn(data, message + "knn_no_of_commits_classification", self.classification.set_no_of_commits_labels)
         return
 
     def do_clustering(self, data_frame, data_set_name):
@@ -89,8 +116,9 @@ networkAnalysis = NetworkAnalysis()
 file_metrics_path = os.path.join(OUTPUT_DIR, "file_metrics.csv")
 commit_metrics_path = os.path.join(OUTPUT_DIR, "commit_metrics.csv")
 
-networkAnalysis.compute_cross_correlations(file_metrics_path)
-networkAnalysis.compute_cross_correlations(commit_metrics_path)
+# networkAnalysis.compute_cross_correlations(file_metrics_path)
+# networkAnalysis.compute_cross_correlations(commit_metrics_path)
 
-networkAnalysis.do_classification(file_metrics_path)
-networkAnalysis.do_classification(commit_metrics_path)
+file_and_commit_df = networkAnalysis.generate_data_frame(file_metrics_path)
+df_with_repo_stats = networkAnalysis.append_repo_stats(file_and_commit_df)
+networkAnalysis.do_classification(df_with_repo_stats)
