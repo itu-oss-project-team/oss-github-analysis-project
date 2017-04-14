@@ -166,10 +166,57 @@ class Classification:
 
         return labels, repo_no_of_commits_pair
 
-    def knn(self, data, message, set_labels, k=15):
+    def trim_data_with_language(self, data, threshold = 3):
         headers, repos, features = self.__fetch_data(data)
-        labels, repo_class_pair = set_labels(repos)
+        language_counts = {}
+        repo_languages = {}
 
+        # Which languages should be treated as one
+        language_groups = [["JavaScript", "TypeScript", "CoffeeScript"]]
+
+        # {"language_a" : "language_a,language_b,language_c"}
+        language_mapping = {}
+
+        # Fill language mapping
+        for language_group in language_groups:
+            group_label = ','.join(language_group)
+            for language in language_group:
+                language_mapping[language] = group_label
+
+        # Let's find out languages of all repos and repo counts of languages with taking care of lang groups
+        for repo in repos:
+            repo_lang = self.__databaseService.get_language_by_repo_full_name(repo)
+            if repo_lang in language_mapping:
+                # Take language group label
+                repo_languages[repo] = language_mapping[repo_lang]
+            else:
+                repo_languages[repo] = repo_lang
+
+            if repo not in language_counts:
+                language_counts[repo] = 1
+            else:
+                language_counts[repo] += 1
+
+        # Find languages with repo counts lower than our thereshold
+        ignored_languages = [language for language in language_counts if language_counts[language] < threshold]
+        # Find repos with ignored languages
+        ignored_repos = [repo for repo in repos if repo_languages[repo] in ignored_languages]
+
+        # We should no longer keep language information of ignored repos
+        for repo in ignored_repos:
+            repo_languages.pop(repo, None)
+
+        # We should no longer keep metrics of ignored repos
+        data = data.drop(ignored_repos)
+
+        labels = []
+        for repo in repo_languages:
+            labels.append(repo_languages[repo])
+        return data, labels, repo_languages
+
+    def knn(self, data, message, set_labels, k=15):
+        data, labels, repo_class_pair = self.trim_data_with_language(data)
+        headers, repos, features = self.__fetch_data(data)
         no_of_classes = len(np.unique(labels))
 
         # new_features = self.__feature_selection(features, labels)
@@ -183,7 +230,7 @@ class Classification:
         success = 0
         fail = 0
 
-        result_classes = [[]*no_of_classes for _ in range(no_of_classes + 1)]
+        result_classes = {}
         i = 0
         for repo, label in repo_class_pair.items():
             print(repo, label, " actual: ", labels[i], " predicted: ", predicted[i])
@@ -192,6 +239,8 @@ class Classification:
             else:
                 fail += 1
 
+            if predicted[i] not in result_classes:
+                result_classes[predicted[i]] = []
             result_classes[predicted[i]].append((repo, labels[i]))
             i += 1
 
@@ -199,12 +248,12 @@ class Classification:
         output_path = os.path.join(OUTPUT_DIR, message + ".txt")
 
         with open(output_path, "w") as output_file:
-            output_file.write("Success: " + str(success) + " Fail: " + str(fail))
-            output_file.write( " : " + str(success/(success+fail)) + "\n\n")
-            for i in range(0, len(result_classes)):
-                output_file.write("Class " + str(i) + "\n" + "\n")
-                for element in result_classes[i]:
-                    output_file.write(str(element[0]) + " - " + str(element[1]) + "\n")
+            output_file.write("# of Success: " + str(success) + ", # of Fail: " + str(fail))
+            output_file.write( ", Success Ratio: " + str(success/(success+fail)) + "\n\n")
+            for label in result_classes:
+                output_file.write("Class: " + label + "\n" + "\n")
+                for repo in result_classes[label]:
+                    output_file.write(repo[0] + " - " + repo[1] + "\n")
                 output_file.write("\n")
 
         '''
