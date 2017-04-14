@@ -19,16 +19,24 @@ class GenerateMatrices:
 
         directory_path = os.path.dirname(os.path.realpath(__file__))
         repositories_file_path = os.path.join(directory_path, 'repositories.txt')
+        finished_repositories_path = os.path.join(directory_path, 'finished_repositories.txt')
+
         repos = [line.rstrip('\n') for line in open(repositories_file_path)]
+        finished_repos = [line.rstrip('\n') for line in open(finished_repositories_path)]
+        repos_left = []
 
         for repo in repos:
+            if repo not in finished_repos:
+                repos_left.append(repo)
+
+        for repo in repos_left:
             repository = self.__databaseService.get_repo_by_full_name(repo)
             repo_id = repository['id']
 
             file_analyzer.analyze_repo(repo)
             commit_analyzer.analyze_repo(repo)
             contributor_matrix_generator.create_matrix(repo_id)
-            print ('\n')
+            print('\n')
 
 
 GM = GenerateMatrices()

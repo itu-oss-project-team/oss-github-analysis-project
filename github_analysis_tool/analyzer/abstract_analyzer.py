@@ -70,7 +70,13 @@ class AbstractAnalyzer(object):
 
         elapsed_time = time.time() - start_time
         print("---> Finishing " + self._name + " analysis for repo: " + str(repo_full_name) + ") in " + "{0:.2f}".format(elapsed_time) + " seconds.")
-        print() # Empty line
+        print()# Empty line
+        directory_path = os.path.dirname(os.path.realpath(__file__))
+        repositories_file_path = os.path.join(directory_path, 'finished_repositories.txt')
+
+        with open('finished_repositories.txt', "a") as finished_repos:
+            finished_repos.write(repo_full_name + "\n")
+
 
     def __create_graph(self, network_matrix):
         graph = WeightedUndirectedGraph()
