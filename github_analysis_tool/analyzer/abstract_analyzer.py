@@ -122,6 +122,6 @@ class AbstractAnalyzer(object):
                     if not node_2 in network_matrix[node_1]:
                         out_file.write("%d;" % 0)
                     else:
-                        out_file.write("%d;" % network_matrix[node_1][node_2])
+                        out_file.write("%f;" % network_matrix[node_1][node_2])
 
                 out_file.write("\n")
