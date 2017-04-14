@@ -22,7 +22,11 @@ class GenerateMatrices:
         finished_repositories_path = os.path.join(directory_path, 'finished_repositories.txt')
 
         repos = [line.rstrip('\n') for line in open(repositories_file_path)]
-        finished_repos = [line.rstrip('\n') for line in open(finished_repositories_path)]
+        if os.path.exists(finished_repositories_path):
+            finished_repos = [line.rstrip('\n') for line in open(finished_repositories_path)]
+        else:
+            finished_repos = []
+
         repos_left = []
 
         for repo in repos:
