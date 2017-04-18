@@ -4,6 +4,7 @@ from sklearn import neighbors
 from sklearn.model_selection import *
 from sklearn.feature_selection import *
 from sklearn.svm import *
+from sklearn.metrics import confusion_matrix
 import numpy as np
 import sys
 import collections
@@ -23,13 +24,13 @@ class Classification:
         features = data._get_values  # fetch features.
         return headers, repos, features
 
-    def set_star_labels(self, repos):
+    def set_star_labels(self, data):
+        headers, repos, features = self.__fetch_data(data)
         labels = []
         repo_stars_pair = collections.OrderedDict()
         for repo in repos:
             result = self.__databaseService.get_repo_by_full_name(repo)
             stars = result["stargazers_count"]
-            repo_stars_pair[repo] = stars
             if stars >= 100000:
                 label = 0
             elif 50000 <= stars < 100000:
@@ -43,17 +44,19 @@ class Classification:
             elif stars < 15000:
                 label = 5
 
+            repo_stars_pair[repo] = label
+
             labels.append(label)
 
         return labels, repo_stars_pair
 
-    def set_no_of_filechanges_labels(self, repos):
+    def set_no_of_filechanges_labels(self, data):
+        headers, repos, features = self.__fetch_data(data)
         labels = []
         repo_no_of_filechanges_pair = collections.OrderedDict()
         for repo in repos:
             result = self.__databaseService.get_repo_stats(repo_full_name=repo)
             no_of_filechanges = result["no_of_file_changes"]
-            repo_no_of_filechanges_pair[repo] = no_of_filechanges
             if no_of_filechanges >= 250000:
                 label = 0
             elif 100000 <= no_of_filechanges < 250000:
@@ -77,17 +80,18 @@ class Classification:
             else:
                 label = 10
 
+            repo_no_of_filechanges_pair[repo] = label
             labels.append(label)
 
         return labels, repo_no_of_filechanges_pair
 
-    def set_no_of_files_labels(self, repos):
+    def set_no_of_files_labels(self, data):
+        headers, repos, features = self.__fetch_data(data)
         labels = []
         repo_no_of_files_pair = collections.OrderedDict()
         for repo in repos:
             result = self.__databaseService.get_repo_stats(repo_full_name=repo)
             no_of_files = result["no_of_changed_files"]
-            repo_no_of_files_pair[repo] = no_of_files
             if no_of_files >= 30000:
                 label = 0
             elif 10000 <= no_of_files < 30000:
@@ -107,6 +111,7 @@ class Classification:
             else:
                 label = 8
 
+            repo_no_of_files_pair[repo] = label
             labels.append(label)
 
         return labels, repo_no_of_files_pair
@@ -139,13 +144,13 @@ class Classification:
 
         return labels, repo_language_pair
 
-    def set_no_of_commits_labels(self, repos):
+    def set_no_of_commits_labels(self, data):
+        headers, repos, features = self.__fetch_data(data)
         labels = []
         repo_no_of_commits_pair = collections.OrderedDict()
         for repo in repos:
             result = self.__databaseService.get_repo_stats(repo_full_name=repo)
             no_of_commits = result["no_of_commits"]
-            repo_no_of_commits_pair[repo] = no_of_commits
 
             if no_of_commits >= 20000:
                 label = 0
@@ -162,6 +167,7 @@ class Classification:
             else:
                 label = 6
 
+            repo_no_of_commits_pair[repo] = label
             labels.append(label)
 
         return labels, repo_no_of_commits_pair
@@ -179,7 +185,7 @@ class Classification:
 
         # Fill language mapping
         for language_group in language_groups:
-            group_label = ','.join(language_group)
+            group_label = '-'.join(language_group)
             for language in language_group:
                 language_mapping[language] = group_label
 
@@ -192,10 +198,10 @@ class Classification:
             else:
                 repo_languages[repo] = repo_lang
 
-            if repo not in language_counts:
-                language_counts[repo] = 1
+            if repo_languages[repo] not in language_counts:
+                language_counts[repo_languages[repo]] = 1
             else:
-                language_counts[repo] += 1
+                language_counts[repo_languages[repo]] += 1
 
         # Find languages with repo counts lower than our thereshold
         ignored_languages = [language for language in language_counts if language_counts[language] < threshold]
@@ -207,68 +213,42 @@ class Classification:
             repo_languages.pop(repo, None)
 
         # We should no longer keep metrics of ignored repos
-        data = data.drop(ignored_repos)
+        new_data = data = data.drop(ignored_repos)
 
         labels = []
         for repo in repo_languages:
             labels.append(repo_languages[repo])
-        return data, labels, repo_languages
+        return new_data, labels, repo_languages
 
-    def knn(self, data, message, set_labels, k=15):
-        data, labels, repo_class_pair = self.trim_data_with_language(data)
+    def knn(self, data, message, set_labels, k=5):
+        data, labels, repo_class_pair = set_labels(data)
         headers, repos, features = self.__fetch_data(data)
-        no_of_classes = len(np.unique(labels))
 
-        # new_features = self.__feature_selection(features, labels)
-        # training_set, test_set, training_labels, test_labels = train_test_split(new_features, labels, test_size=0.3)
-
-        classifier = neighbors.KNeighborsClassifier(k, weights='distance')
-        # classifier.fit(training_set, training_labels)
+        new_features = self.__feature_selection(features, labels, 8)
+        training_set, test_set, training_labels, test_labels = self.__split_data(features, repos, labels, repo_class_pair)
+        knn_classifier = neighbors.KNeighborsClassifier(k, weights='distance')
+        knn_classifier.fit(training_set, training_labels)
+        predicted = knn_classifier.predict(test_set)
         # scores = cross_val_score(classifier, features, labels, cv=5)
-        predicted = cross_val_predict(classifier, features, labels, cv=5)
+        # predicted = cross_val_predict(classifier, features, labels, cv=5)
 
+        '''
         success = 0
         fail = 0
-
-        result_classes = {}
-        i = 0
-        for repo, label in repo_class_pair.items():
-            print(repo, label, " actual: ", labels[i], " predicted: ", predicted[i])
-            if labels[i] == predicted[i]:
+        for i in range(0, len(test_labels)):
+            print("actual: ", test_labels[i], "result: ", predicted[i])
+            if predicted[i] == test_labels[i]:
                 success += 1
             else:
                 fail += 1
-
-            if predicted[i] not in result_classes:
-                result_classes[predicted[i]] = []
-            result_classes[predicted[i]].append((repo, labels[i]))
-            i += 1
 
         print(success, fail, success/(success+fail))
-        output_path = os.path.join(OUTPUT_DIR, message + ".txt")
-
-        with open(output_path, "w") as output_file:
-            output_file.write("# of Success: " + str(success) + ", # of Fail: " + str(fail))
-            output_file.write( ", Success Ratio: " + str(success/(success+fail)) + "\n\n")
-            for label in result_classes:
-                output_file.write("Class: " + label + "\n" + "\n")
-                for repo in result_classes[label]:
-                    output_file.write(repo[0] + " - " + repo[1] + "\n")
-                output_file.write("\n")
-
         '''
-        success = 0
-        fail = 0
-        for i in range(0, len(test_set)):
-            result = classifier.predict(test_set[i])
-            print("actual: ", labels[i], "result: ", result[0])
-            if result[0] == labels[i]:
-                success += 1
-            else:
-                fail += 1
 
-        print(success, fail)
-        '''
+        output_path = os.path.join(OUTPUT_DIR, message + ".csv")
+
+        self.__export_confusion_matrix(test_labels, predicted, output_path)
+
 
     def svc(self, data, message, set_labels):
         headers, repos, features = self.__fetch_data(data)
@@ -308,7 +288,86 @@ class Classification:
                     output_file.write(str(element[0]) + " - " + str(element[1]) + "\n")
                 output_file.write("\n")
 
-    def __feature_selection(self, features, labels):
-        sel = SelectKBest(chi2, k=10)
+    def __feature_selection(self, features, labels, k=10):
+        sel = SelectKBest(chi2, k=k)
         new_features = sel.fit_transform(features, labels)
         return new_features
+
+    def __split_data(self, features, repos, labels, repo_class_pairs):
+        training_set = []
+        test_set = []
+        training_labels = []
+        test_labels = []
+
+        # count number of instances in each class
+        class_counts = {}
+        for repo in repo_class_pairs:
+            if repo_class_pairs[repo] not in class_counts:
+                class_counts[repo_class_pairs[repo]] = 1
+            else:
+                class_counts[repo_class_pairs[repo]] += 1
+
+        # compute split sizes logarithmically for each class
+        split_sizes = {}
+        for class_label in class_counts:
+            label_count = class_counts[class_label]
+            if 1 < label_count <= 10:
+                split_size = np.math.floor(1.4 * label_count / np.log2(label_count))
+            elif label_count > 10:
+                split_size = np.math.ceil(0.50*label_count / (np.log10(label_count)))
+            else:
+                split_size = label_count
+
+            print(class_label, split_size, class_counts[class_label])
+            split_sizes[class_label] = split_size
+
+        #split data to test-train according to split_sizes.
+        class_counters = {}
+        i = 0
+        for repo in repo_class_pairs:
+            class_label = repo_class_pairs[repo]
+            if class_label not in class_counters:
+                class_counters[class_label] = 1
+            else:
+                class_counters[class_label] += 1
+
+            if class_counters[class_label] <= split_sizes[class_label]:
+                training_labels.append(labels[i])
+                training_set.append(features[i])
+            else:
+                test_labels.append(labels[i])
+                test_set.append(features[i])
+
+            i += 1
+
+        return training_set, test_set, training_labels, test_labels
+
+    def __export_confusion_matrix(self, labels, predicted, output_path):
+        success = 0
+        fail = 0
+        for i in range(0,len(labels)):
+            if labels[i] == predicted[i]:
+                success += 1
+            else:
+                fail += 1
+
+        print(success, fail, success/(success+fail))
+
+        label_names = np.unique(labels)
+        prediction_names = np.unique(predicted)
+
+        conf_matrix = confusion_matrix(labels, predicted, label_names)
+        print(conf_matrix)
+        with open(output_path, "w") as output_file:
+            output_file.write(";")
+            for i in range(0, len(label_names)):
+                output_file.write(str(label_names[i]) + ";")
+            output_file.write("\n")
+            for row in range(0, len(conf_matrix)):
+                output_file.write(str(label_names[row]) + ";")
+                for col in range(0, len(conf_matrix[row])):
+                    output_file.write(str(conf_matrix[row][col]) + ";")
+                output_file.write("\n")
+
+
+

@@ -27,12 +27,12 @@ class NetworkAnalysis:
         features = data._get_values  # fetch features.
         return headers, repos, features
 
-    def compute_cross_correlations(self, file_name):
-        data = pandas.read_csv(file_name, sep=';', index_col=0)  # read the csv file
-
+    def compute_cross_correlations(self, data, message=""):
         correlations = collections.OrderedDict()
         avg_correlations = collections.OrderedDict()
+        metrics_to_be_removed = set()
 
+        print(data.shape)
         for metric1 in data._series.keys():
             correlations[metric1] = collections.OrderedDict()
             corrs = []
@@ -46,7 +46,45 @@ class NetworkAnalysis:
 
             avg_correlations[metric1] = np.mean(corrs)
 
-        output_file_path = file_name[:-4] + "_correlation_matrix.csv"
+        considered_metrics = set()
+        metric_votes = {}
+        for metric1 in correlations:
+            considered_metrics.add(metric1)
+            for metric2 in list(set(correlations.keys())-considered_metrics):
+                if metric1 == metric2:
+                    continue
+
+                if abs(correlations[metric1][metric2]) > 0.50:
+                    #print(metric1, metric2, str(correlations[metric1][metric2]))
+                    if metric1 not in metric_votes:
+                        metric_votes[metric1] = -1
+                    else:
+                        metric_votes[metric1] -= 1
+
+                    if metric2 not in metric_votes:
+                        metric_votes[metric2] = -1
+                    else:
+                        metric_votes[metric2] -= 1
+
+                else:
+                    if metric1 not in metric_votes:
+                        metric_votes[metric1] = 1
+                    else:
+                        metric_votes[metric1] += 1
+
+                    if metric2 not in metric_votes:
+                        metric_votes[metric2] = 1
+                    else:
+                        metric_votes[metric2] += 1
+
+        for metric in metric_votes:
+            if(metric_votes[metric] < 0):
+                metrics_to_be_removed.add(metric)
+
+        new_data = data.drop(metrics_to_be_removed, axis=1)
+        print(new_data.shape)
+
+        output_file_path = os.path.join(OUTPUT_DIR, message + "correlation_matrix.csv")
         with open(output_file_path, "w") as output:
             output.write(";")
             for metric1 in correlations:
@@ -57,25 +95,36 @@ class NetworkAnalysis:
                 for metric2 in correlations[metric1]:
                     output.write(str(correlations[metric1][metric2]) + ";")
                 output.write("\n")
-        return
+
+        return new_data
 
     def generate_data_frame(self, file_path, file_path_2=None):
         data = pandas.read_csv(file_path, sep=';', index_col=0)  # read the csv file
         if file_path_2 is not None:
             data2 = pandas.read_csv(file_path_2, sep=';', index_col=0)
+            new_headers_2 = data2.columns.values
+            for i in range(0,len(new_headers_2)):
+                new_headers_2[i] += "_2"
+
+            data2.rename(columns=dict(zip(data2.columns, new_headers_2)), inplace=True)
             new_data_frame = pandas.concat([data, data2], axis=1)
             new_data_frame.dropna(inplace=True)
             return new_data_frame
         else:
             return data
 
-    def append_repo_stats(self, data):
-        repos = data.index.values
-        repo_stats = {}
-        for repo in repos:
-            repo_stats[repo] = self.datatabase_service.get_repo_stats(repo)
+    def append_repo_stats(self, data, force=False):
+        if not os.path.exists(os.path.join(OUTPUT_DIR, "repo_stats.csv")) or force:
+            repos = data.index.values
+            repo_stats = {}
+            for repo in repos:
+                repo_stats[repo] = self.datatabase_service.get_repo_stats(repo)
 
-        repo_stats_df = pandas.DataFrame().from_dict(repo_stats, orient='index')
+            repo_stats_df = pandas.DataFrame().from_dict(repo_stats, orient='index')
+            repo_stats_df.to_csv(os.path.join(OUTPUT_DIR, "repo_stats.csv"), sep=";")
+        else:
+            repo_stats_df = pandas.read_csv(os.path.join(OUTPUT_DIR, "repo_stats.csv"), sep=";", index_col=0)
+
         new_data_frame = pandas.concat([data, repo_stats_df], axis=1)
         new_data_frame.dropna(inplace=True)
         return new_data_frame
@@ -88,7 +137,7 @@ class NetworkAnalysis:
             message += file_name[:-4] + "_"
 
         #self.classification.knn(data, message + "knn_star_classification", self.classification.set_star_labels)
-        self.classification.knn(data, message + "knn_language_classification", self.classification.set_language_labels)
+        self.classification.knn(data, message + "knn_language_classification", self.classification.trim_data_with_language)
         #self.classification.knn(data, message + "knn_no_of_files_classification", self.classification.set_no_of_files_labels)
         #self.classification.knn(data, message + "knn_no_of_file_changes_classification", self.classification.set_no_of_filechanges_labels)
         #self.classification.knn(data, message + "knn_no_of_commits_classification", self.classification.set_no_of_commits_labels)
@@ -116,9 +165,8 @@ networkAnalysis = NetworkAnalysis()
 file_metrics_path = os.path.join(OUTPUT_DIR, "file_metrics.csv")
 commit_metrics_path = os.path.join(OUTPUT_DIR, "commit_metrics.csv")
 
-# networkAnalysis.compute_cross_correlations(file_metrics_path)
-# networkAnalysis.compute_cross_correlations(commit_metrics_path)
 
 file_and_commit_df = networkAnalysis.generate_data_frame(file_metrics_path)
-df_with_repo_stats = networkAnalysis.append_repo_stats(file_and_commit_df)
+df_with_repo_stats = networkAnalysis.append_repo_stats(file_and_commit_df, force=False)
+# reduced_df_with_repo_stats = networkAnalysis.compute_cross_correlations(df_with_repo_stats)
 networkAnalysis.do_classification(df_with_repo_stats)
