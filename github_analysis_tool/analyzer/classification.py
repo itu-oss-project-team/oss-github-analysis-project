@@ -312,7 +312,6 @@ class Classification:
             else:
                 split_size = label_count
 
-            print(class_label, split_size, class_counts[class_label])
             split_sizes[class_label] = split_size
 
         #split data to test-train according to split_sizes.
