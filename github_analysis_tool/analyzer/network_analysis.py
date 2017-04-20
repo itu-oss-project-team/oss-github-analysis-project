@@ -136,11 +136,11 @@ class NetworkAnalysis:
             dir, file_name = os.path.split(file_path)
             message += file_name[:-4] + "_"
 
-        #self.classification.knn(data, message + "knn_star_classification", self.classification.set_star_labels)
         self.classification.knn(data, message + "knn_language_classification", self.classification.trim_data_with_language)
-        #self.classification.knn(data, message + "knn_no_of_files_classification", self.classification.set_no_of_files_labels)
-        #self.classification.knn(data, message + "knn_no_of_file_changes_classification", self.classification.set_no_of_filechanges_labels)
-        #self.classification.knn(data, message + "knn_no_of_commits_classification", self.classification.set_no_of_commits_labels)
+        self.classification.knn(data, message + "knn_star_classification", self.classification.set_star_labels)
+        self.classification.knn(data, message + "knn_no_of_files_classification", self.classification.set_no_of_files_labels)
+        self.classification.knn(data, message + "knn_no_of_file_changes_classification", self.classification.set_no_of_filechanges_labels)
+        self.classification.knn(data, message + "knn_no_of_commits_classification", self.classification.set_no_of_commits_labels)
         return
 
     def do_clustering(self, data_frame, data_set_name):
@@ -149,6 +149,11 @@ class NetworkAnalysis:
         out_path = os.path.join(OUTPUT_DIR, "clustering", data_set_name)
         if not os.path.exists(out_path):
             os.makedirs(out_path)
+
+        for i in range(3, 9):
+            print("------> MB K-Means clustering with # of clusters: " + str(i))
+            self.clustering.minibatchs_k_means_clustering(out_path, data_frame, number_of_clusters=i)
+
         for i in range(3, 9):
             print("------> K-Means clustering with # of clusters: " + str(i))
             self.clustering.k_means_clustering(out_path, data_frame, number_of_clusters=i)
@@ -160,11 +165,11 @@ class NetworkAnalysis:
                 print("------> HDBSCAN clustering with min clusters: " + str(i) + ", min samples: " + str(j))
                 self.clustering.hdbscan_clustering(out_path, data_frame, min_cluster_size=i, min_samples=j)
 
+
 networkAnalysis = NetworkAnalysis()
 
 file_metrics_path = os.path.join(OUTPUT_DIR, "file_metrics.csv")
 commit_metrics_path = os.path.join(OUTPUT_DIR, "commit_metrics.csv")
-
 
 file_and_commit_df = networkAnalysis.generate_data_frame(file_metrics_path)
 df_with_repo_stats = networkAnalysis.append_repo_stats(file_and_commit_df, force=False)

@@ -1,7 +1,7 @@
 import os.path
 import sys
 import pandas
-from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.cluster import KMeans, AgglomerativeClustering, MiniBatchKMeans
 import hdbscan
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -71,6 +71,23 @@ class Clustering:
 
         out_file_path = os.path.join(out_path, "hdbscan_minSize" + str(min_cluster_size) + "_minSamples" + str(min_samples))
         self.__export_hdbscan_results(hdbscan_clustering, clusters, out_file_path)
+
+    def minibatchs_k_means_clustering(self, out_path, pd_data, number_of_clusters):
+        headers, repos, features = self.__fetch_data(pd_data)
+
+        mb_kmeans = MiniBatchKMeans(n_clusters=number_of_clusters)
+        mb_kmeans.fit(features)
+
+        clusters = []
+        for i in range(0, number_of_clusters): # k cluster
+            repo_list = []
+            for j in range (0, len(mb_kmeans.labels_)):  # a label for each repo.
+                if i == mb_kmeans.labels_[j]:  # if repo label is equal to Cluster number
+                    repo_list.append(repos[j])  # add repo to cluster i's list.
+            clusters.append(repo_list)
+        out_file_path = os.path.join(out_path, "mb_kmeans_noOfClusters" + str(number_of_clusters))
+        self.__export_k_means_results(mb_kmeans, headers, clusters, out_file_path)  # avoid ".csv"
+
 
     def __export_k_means_results(self, clusterer, headers, clusters, file_path):
 
