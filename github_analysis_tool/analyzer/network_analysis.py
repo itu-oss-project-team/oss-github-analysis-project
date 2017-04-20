@@ -130,17 +130,13 @@ class NetworkAnalysis:
         return new_data_frame
 
 
-    def do_classification(self, data, file_path=None):
-        message = ""
-        if file_path is not None:
-            dir, file_name = os.path.split(file_path)
-            message += file_name[:-4] + "_"
+    def do_classification(self, data, message):
 
-        self.classification.knn(data, message + "knn_language_classification", self.classification.trim_data_with_language)
-        self.classification.knn(data, message + "knn_star_classification", self.classification.set_star_labels)
-        self.classification.knn(data, message + "knn_no_of_files_classification", self.classification.set_no_of_files_labels)
-        self.classification.knn(data, message + "knn_no_of_file_changes_classification", self.classification.set_no_of_filechanges_labels)
-        self.classification.knn(data, message + "knn_no_of_commits_classification", self.classification.set_no_of_commits_labels)
+        self.classification.knn(data, message + "_knn_language_classification", self.classification.trim_data_with_language)
+        self.classification.knn(data, message + "_knn_star_classification", self.classification.set_star_labels)
+        self.classification.knn(data, message + "_knn_no_of_files_classification", self.classification.set_no_of_files_labels)
+        self.classification.knn(data, message + "_knn_no_of_file_changes_classification", self.classification.set_no_of_filechanges_labels)
+        self.classification.knn(data, message + "_knn_no_of_commits_classification", self.classification.set_no_of_commits_labels)
         return
 
     def do_clustering(self, data_frame, data_set_name):
@@ -171,7 +167,8 @@ networkAnalysis = NetworkAnalysis()
 file_metrics_path = os.path.join(OUTPUT_DIR, "file_metrics.csv")
 commit_metrics_path = os.path.join(OUTPUT_DIR, "commit_metrics.csv")
 
-file_and_commit_df = networkAnalysis.generate_data_frame(file_metrics_path)
-df_with_repo_stats = networkAnalysis.append_repo_stats(file_and_commit_df, force=False)
+file_df = networkAnalysis.generate_data_frame(file_metrics_path)
+df_with_repo_stats = networkAnalysis.append_repo_stats(file_df, force=False)
 # reduced_df_with_repo_stats = networkAnalysis.compute_cross_correlations(df_with_repo_stats)
-networkAnalysis.do_classification(df_with_repo_stats)
+networkAnalysis.do_classification(df_with_repo_stats, "file_with_repo_stats")
+networkAnalysis.do_classification(file_df, "file")
