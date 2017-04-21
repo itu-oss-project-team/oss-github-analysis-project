@@ -4,6 +4,7 @@ import numpy as np
 import sys
 from scipy.stats import linregress
 import collections
+from sklearn.preprocessing import *
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from github_analysis_tool.analyzer.clustering import Clustering
@@ -98,20 +99,15 @@ class NetworkAnalysis:
 
         return new_data
 
-    def generate_data_frame(self, file_path, file_path_2=None):
-        data = pandas.read_csv(file_path, sep=';', index_col=0)  # read the csv file
-        if file_path_2 is not None:
-            data2 = pandas.read_csv(file_path_2, sep=';', index_col=0)
-            new_headers_2 = data2.columns.values
-            for i in range(0,len(new_headers_2)):
-                new_headers_2[i] += "_2"
+    def concatenate_data_frames(self, data_frame_1, data_frame_2):
+        new_headers_2 = data_frame_2.columns.values
+        for i in range(0,len(new_headers_2)):
+            new_headers_2[i] += "_2"
 
-            data2.rename(columns=dict(zip(data2.columns, new_headers_2)), inplace=True)
-            new_data_frame = pandas.concat([data, data2], axis=1)
-            new_data_frame.dropna(inplace=True)
-            return new_data_frame
-        else:
-            return data
+        data_frame_2.rename(columns=dict(zip(data_frame_2.columns, new_headers_2)), inplace=True)
+        new_data_frame = pandas.concat([data_frame_1, data_frame_2], axis=1)
+        new_data_frame.dropna(inplace=True)
+        return new_data_frame
 
     def append_repo_stats(self, data, force=False):
         if not os.path.exists(os.path.join(OUTPUT_DIR, "repo_stats.csv")) or force:
@@ -132,6 +128,7 @@ class NetworkAnalysis:
 
     def do_classification(self, data, message):
 
+        self.classification.knn(data, message + "_knn_two_class_language_classification", self.classification.set_two_class_language_labels)
         self.classification.knn(data, message + "_knn_language_classification", self.classification.trim_data_with_language)
         self.classification.knn(data, message + "_knn_star_classification", self.classification.set_star_labels)
         self.classification.knn(data, message + "_knn_no_of_files_classification", self.classification.set_no_of_files_labels)
@@ -167,8 +164,12 @@ networkAnalysis = NetworkAnalysis()
 file_metrics_path = os.path.join(OUTPUT_DIR, "file_metrics.csv")
 commit_metrics_path = os.path.join(OUTPUT_DIR, "commit_metrics.csv")
 
-file_df = networkAnalysis.generate_data_frame(file_metrics_path)
-df_with_repo_stats = networkAnalysis.append_repo_stats(file_df, force=False)
+file_metrics_df = pandas.read_csv(file_metrics_path, sep=';', index_col=0)  # read the csv file
+commit_metrics_df = pandas.read_csv(commit_metrics_path, sep=';', index_col=0)  # read the csv file
+
+# file_and_commit_df = networkAnalysis.concatenate_data_frames(file_and_commit_df, commit_metrics_df)
+df_with_repo_stats = networkAnalysis.append_repo_stats(file_metrics_df, force=False)
 # reduced_df_with_repo_stats = networkAnalysis.compute_cross_correlations(df_with_repo_stats)
+
 networkAnalysis.do_classification(df_with_repo_stats, "file_with_repo_stats")
-networkAnalysis.do_classification(file_df, "file")
+# networkAnalysis.do_classification(file_metrics_df, "file")
