@@ -59,7 +59,7 @@ def cluster_with_file_metrics():
     '''
 
     for data_set in data_sets:
-        network_analysis.do_clustering(data_frame=data_set["df"], data_set_name=data_set["name"])
+        network_analysis.do_clustering(data_frame=data_set["df"], df_name=data_set["name"])
 
     print("--> Network analysis for file metrics finished")
 
