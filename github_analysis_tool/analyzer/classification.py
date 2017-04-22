@@ -22,11 +22,11 @@ class Classification:
     def __fetch_data(self, data):
         headers = data.columns.values  # fetch headers
         repos = data.index.values  # fetch repos
-        features = data._get_values  # fetch features.
-        return headers, repos, features
+        observations = data._get_values  # fetch observations.
+        return headers, repos, observations
 
     def set_star_labels(self, data):
-        headers, repos, features = self.__fetch_data(data)
+        headers, repos, observations = self.__fetch_data(data)
         labels = []
         repo_stars_pair = collections.OrderedDict()
         for repo in repos:
@@ -50,7 +50,7 @@ class Classification:
         return data, labels, repo_stars_pair
 
     def set_no_of_filechanges_labels(self, data):
-        headers, repos, features = self.__fetch_data(data)
+        headers, repos, observations = self.__fetch_data(data)
         labels = []
         repo_no_of_filechanges_pair = collections.OrderedDict()
         for repo in repos:
@@ -85,7 +85,7 @@ class Classification:
         return data, labels, repo_no_of_filechanges_pair
 
     def set_no_of_files_labels(self, data):
-        headers, repos, features = self.__fetch_data(data)
+        headers, repos, observations = self.__fetch_data(data)
         labels = []
         repo_no_of_files_pair = collections.OrderedDict()
         for repo in repos:
@@ -115,37 +115,28 @@ class Classification:
 
         return data, labels, repo_no_of_files_pair
 
-    def set_language_labels(self, data):
-        headers, repos, features = self.__fetch_data(data)
+    def set_two_class_language_labels(self, data):
+        headers, repos, observations = self.__fetch_data(data)
         labels = []
         repo_language_pair = collections.OrderedDict()
+
         for repo in repos:
             language = self.__databaseService.get_language_by_repo_full_name(repo)
-            repo_language_pair[repo] = language
 
-            if language == "JavaScript" or language == "TypeScript" or language == "CoffeeScript":
-                label = 0
-            elif language == "Python":
-                label = 1
-            elif language == "Java":
-                label = 2
-            elif language == "Ruby":
-                label = 3
-            elif language == "Go":
-                label = 4
-            elif language == "C++" or language == "C":
-                label = 5
-            elif language == "Objective-C" or language == "Swift" or language == "Objective-C++":
-                label = 6
+            if language == "JavaScript" or language == "TypeScript" or language == "CoffeeScript" \
+                    or language == "HTML" or language == "CSS" or language == "PHP" \
+                    or language == "Jupyter Notebook":
+                label = "Web"
             else:
-                label = 7
+                label = "Non-Web"
 
+            repo_language_pair[repo] = language
             labels.append(label)
 
         return data, labels, repo_language_pair
 
     def set_no_of_commits_labels(self, data):
-        headers, repos, features = self.__fetch_data(data)
+        headers, repos, observations = self.__fetch_data(data)
         labels = []
         repo_no_of_commits_pair = collections.OrderedDict()
         for repo in repos:
@@ -173,7 +164,7 @@ class Classification:
         return data, labels, repo_no_of_commits_pair
 
     def trim_data_with_language(self, data, threshold = 3):
-        headers, repos, features = self.__fetch_data(data)
+        headers, repos, observations = self.__fetch_data(data)
         language_counts = {}
         repo_languages = {}
 
@@ -222,16 +213,16 @@ class Classification:
 
     def knn(self, data, message, set_labels, k=5):
         data, labels, repo_class_pair = set_labels(data)
-        headers, repos, features = self.__fetch_data(data)
+        headers, repos, observations = self.__fetch_data(data)
 
-        new_features = self.__feature_selection(features, labels, 20)
+        new_observations = self.__feature_selection(observations, labels, 20)
 
-        training_set, test_set, training_labels, test_labels = self.__split_data(new_features, repos, labels, repo_class_pair)
+        training_set, test_set, training_labels, test_labels = self.__split_data(new_observations, repos, labels, repo_class_pair)
         knn_classifier = neighbors.KNeighborsClassifier(k, weights='distance')
         knn_classifier.fit(training_set, training_labels)
         predicted = knn_classifier.predict(test_set)
-        # scores = cross_val_score(classifier, features, labels, cv=5)
-        # predicted = cross_val_predict(classifier, features, labels, cv=5)
+        # scores = cross_val_score(classifier, observations, labels, cv=5)
+        # predicted = cross_val_predict(classifier, observations, labels, cv=5)
 
         '''
         success = 0
@@ -253,15 +244,15 @@ class Classification:
 
     def svc(self, data, message, set_labels):
         data, labels, repo_class_pair = set_labels(data)
-        headers, repos, features = self.__fetch_data(data)
+        headers, repos, observations = self.__fetch_data(data)
 
-        new_features = self.__feature_selection(features, labels, 8)
-        training_set, test_set, training_labels, test_labels = self.__split_data(features, repos, labels, repo_class_pair)
+        new_observations = self.__feature_selection(observations, labels, 8)
+        training_set, test_set, training_labels, test_labels = self.__split_data(observations, repos, labels, repo_class_pair)
         svc_classifier = SVC(kernel='rbf')
         svc_classifier.fit(training_set, training_labels)
         predicted = svc_classifier.predict(test_set)
-        # scores = cross_val_score(classifier, features, labels, cv=5)
-        # predicted = cross_val_predict(classifier, features, labels, cv=5)
+        # scores = cross_val_score(classifier, observations, labels, cv=5)
+        # predicted = cross_val_predict(classifier, observations, labels, cv=5)
 
         '''
         success = 0
@@ -280,12 +271,12 @@ class Classification:
 
         self.__export_confusion_matrix(test_labels, predicted, output_path)
 
-    def __feature_selection(self, features, labels, k=10):
+    def __feature_selection(self, observations, labels, k=10):
         sel = SelectKBest(chi2, k=k)
-        new_features = sel.fit_transform(features, labels)
-        return new_features
+        new_observations = sel.fit_transform(observations, labels)
+        return new_observations
 
-    def __split_data(self, features, repos, labels, repo_class_pairs):
+    def __split_data(self, observations, repos, labels, repo_class_pairs):
         training_set = []
         test_set = []
         training_labels = []
@@ -326,10 +317,10 @@ class Classification:
 
             if class_counters[class_label] <= split_sizes[class_label]:
                 training_labels.append(labels[i])
-                training_set.append(features[i])
+                training_set.append(observations[i])
             else:
                 test_labels.append(labels[i])
-                test_set.append(features[i])
+                test_set.append(observations[i])
 
             i += 1
 
