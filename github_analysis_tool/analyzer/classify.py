@@ -18,6 +18,8 @@ classification = Classification()
 label_funcs = list()  # {func:<labelling_function(df)>, name:<String>}
 
 label_funcs.append({"func": classification.set_language_labels, "name": "languageLabels"})
+label_funcs.append({"func": classification.set_two_class_language_labels, "name": "twoClassLanguageLabels"})
+label_funcs.append({"func": classification.set_star_labels, "name": "starLabels"})
 
 # Create data frames
 data_sets = list()  # {df:<DataFrame>, name:<String>}
@@ -35,12 +37,26 @@ repo_df = analysis_utilities.get_repo_stats_df()
 data_sets.append({"df": repo_df, "name": "(repoStat)"})
 
 # File + commit metrics data frame
-file_commit_df = analysis_utilities.merge_dfs_on_indexes(file_df, commit_df, "file", "commit")
+file_commit_df = analysis_utilities.merge_dfs_on_indexes(file_df, commit_df, "_file", "_commit")
 data_sets.append({"df": file_commit_df, "name": "(fileMetric,CommitMetric)"})
+
+file_repo_df = analysis_utilities.merge_dfs_on_indexes(file_df, repo_df, "", "")
+data_sets.append({"df": file_repo_df, "name": "(fileMetric,repoStat)"})
+
+commit_repo_df = analysis_utilities.merge_dfs_on_indexes(commit_df, repo_df, "", "")
+data_sets.append({"df": file_repo_df, "name": "(commitMetric,repoStat)"})
+
+file_commit_repo_df = analysis_utilities.merge_dfs_on_indexes(file_commit_df, repo_df)
+data_sets.append({"df": file_commit_repo_df, "name": "(fileMetric,commitMetric,repoStat)"})
 
 for label_func in label_funcs:
     for data_set in data_sets:
         network_analysis.do_classification(df=data_set["df"], df_name=data_set["name"],
-                                           labelling_func=label_func["func"], labelling_name=label_func["name"])
+                                           labelling_func=label_func["func"], labelling_name=label_func["name"],
+                                           sampling=False)
+        if label_func["name"] == "languageLabels":
+            network_analysis.do_classification(df=data_set["df"], df_name=data_set["name"],
+                                               labelling_func=label_func["func"], labelling_name=label_func["name"],
+                                               sampling=True)
 
 print("--> Classification finished calculation finished")

@@ -2,7 +2,7 @@ import collections
 import numpy as np
 import os.path
 from sklearn import neighbors
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, accuracy_score
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -18,7 +18,7 @@ class Classification:
 
     def set_language_labels(self, df):
         threshold = 3
-        headers, repos, features = self.__analysis_utilities.decompose_df(df)
+        headers, repos, observations = self.__analysis_utilities.decompose_df(df)
         language_counts = {}
         repo_labels = {}
 
@@ -60,10 +60,54 @@ class Classification:
         labels = []
         for repo in repo_labels:
             labels.append(repo_labels[repo])
+
         return labels, repo_labels, ignored_repos
 
+    def set_two_class_language_labels(self, df):
+        headers, repos, observations = self.__analysis_utilities.decompose_df(df)
+        labels = []
+        repo_labels = collections.OrderedDict()
+
+        for repo in repos:
+            language = self.__database_service.get_language_by_repo_full_name(repo)
+
+            if language == "JavaScript" or language == "TypeScript" or language == "CoffeeScript" \
+                    or language == "HTML" or language == "CSS" or language == "PHP" \
+                    or language == "Jupyter Notebook":
+                label = "Web"
+            else:
+                label = "Non-Web"
+
+            repo_labels[repo] = label
+            labels.append(label)
+
+        return labels, repo_labels, []  # No ignored repos
+
+    def set_star_labels(self, df):
+        headers, repos, observations = self.__analysis_utilities.decompose_df(df)
+        labels = []
+        repo_labels = collections.OrderedDict()
+        for repo in repos:
+            result = self.__database_service.get_repo_by_full_name(repo)
+            stars = result["stargazers_count"]
+            if stars > 50000:
+                label = "50k+"
+            elif 30000 <= stars < 50000:
+                label = "30k-50k"
+            elif 20000 <= stars < 30000:
+                label = "20k-30k"
+            elif 15000 <= stars < 20000:
+                label = "15k-20k"
+            elif stars < 15000:
+                label = "15k-"
+
+            repo_labels[repo] = label
+            labels.append(label)
+
+        return labels, repo_labels, []  # No ignored repos
+
     def set_no_of_commits_labels(self, df):
-        headers, repos, features = self.__analysis_utilities.decompose_df(df)
+        headers, repos, observations = self.__analysis_utilities.decompose_df(df)
         labels = []
         repo_labels = collections.OrderedDict()
         for repo in repos:
@@ -90,46 +134,29 @@ class Classification:
 
         return labels, repo_labels, []  # No ignored repos
 
-    def __export_confusion_matrix(self, labels, predicted, out_file_pre_path):
-        success = 0
-        fail = 0
-        for i in range(0, len(labels)):
-            if labels[i] == predicted[i]:
-                success += 1
-            else:
-                fail += 1
-
-        print(success, fail, success/(success+fail))
+    def __retrieve_confusion_matrix(self, labels, predicted, out_file_pre_path):
+        success = accuracy_score(labels, predicted, normalize=False)
+        fail = len(labels) - success
+        ratio = accuracy_score(labels, predicted)
+        print(success, fail, ratio)
 
         label_names = np.unique(labels)
 
         conf_matrix = confusion_matrix(labels, predicted, label_names)
-        print(conf_matrix)
-        out_file_path = out_file_pre_path + "_confusionMatrix.csv"
-        with open(out_file_path, "w") as output_file:
-            output_file.write(";")
-            for i in range(0, len(label_names)):
-                output_file.write(str(label_names[i]) + ";")
-            output_file.write("\n")
-            for row in range(0, len(conf_matrix)):
-                output_file.write(str(label_names[row]) + ";")
-                for col in range(0, len(conf_matrix[row])):
-                    output_file.write(str(conf_matrix[row][col]) + ";")
-                output_file.write("\n")
 
-            output_file.write(";")
-            for col in range(0, len(conf_matrix[0])):
-                output_file.write(";")
-            output_file.write(str(success) + ";" + str(fail) + ";")
-            output_file.write(str(success/(success+fail)) + ";\n")
+        self.__analysis_utilities.export_confusion_matrix(out_file_pre_path, conf_matrix,
+                                                          label_names, success, fail)
 
-    def classify_with_knn(self, out_folder_path, training_set, test_set, training_labels, test_labels, k=5):
+        return conf_matrix
 
-        out_file_pre_path = os.path.join(out_folder_path, "knn" + str(k))  # Any output file should extend this path
+    def knn_classify(self, out_folder_path, training_set, test_set, training_labels, test_labels, k=3, msg=""):
+        out_file_pre_path = os.path.join(out_folder_path, "knn" + str(k) + msg)  # Any output file should extend this path
 
         knn_classifier = neighbors.KNeighborsClassifier(k, weights='distance')
         knn_classifier.fit(training_set, training_labels)
         predicted = knn_classifier.predict(test_set)
 
-        self.__export_confusion_matrix(test_labels, predicted, out_file_pre_path)
+        success = accuracy_score(test_labels, predicted, normalize=False)
+        conf_matrix = self.__retrieve_confusion_matrix(test_labels, predicted, out_file_pre_path)
+        return conf_matrix, success
 

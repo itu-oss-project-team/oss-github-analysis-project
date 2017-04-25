@@ -2,9 +2,8 @@ import os.path
 import sys
 import numpy as np
 import pandas as pd
-
-from sklearn.cluster import KMeans, AgglomerativeClustering, MiniBatchKMeans
-import hdbscan
+import random
+import collections
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from github_analysis_tool.services.database_service import DatabaseService
@@ -56,10 +55,21 @@ class AnalysisUtilities:
         """
         return left_df.join(right_df, how='inner', lsuffix=left_suffix, rsuffix=right_suffix)
 
-    def split_data(self, features, labels, row_labels):
+    def __count_classes(self, labels):
+        # count number of instances in each class
+        class_counts = {}
+        for label in labels:
+            if label not in class_counts:
+                class_counts[label] = 1
+            else:
+                class_counts[label] += 1
+
+        return class_counts
+
+    def split_data(self, observations, labels, row_labels):
         """
         
-        :param features: Features matrix to be split
+        :param observations: Features matrix to be split
         :param labels: List of labels
         :param row_labels: List of {<key>:<label>} pairs
         :return: training and test set as pandas df and their labels 
@@ -70,14 +80,7 @@ class AnalysisUtilities:
         training_labels = []
         test_labels = []
 
-        # count number of instances in each class
-        class_counts = {}
-        for repo in row_labels:
-            if row_labels[repo] not in class_counts:
-                class_counts[row_labels[repo]] = 1
-            else:
-                class_counts[row_labels[repo]] += 1
-
+        class_counts = self.__count_classes(labels)
         # compute split sizes logarithmically for each class
         split_sizes = {}
         for class_label in class_counts:
@@ -105,10 +108,10 @@ class AnalysisUtilities:
 
             if class_counters[class_label] <= split_sizes[class_label]:
                 training_labels.append(labels[i])
-                training_set.append(features[i])
+                training_set.append(observations[i])
             else:
                 test_labels.append(labels[i])
-                test_set.append(features[i])
+                test_set.append(observations[i])
 
             i += 1
 
@@ -119,3 +122,75 @@ class AnalysisUtilities:
         to_drop_indexes = [index for index in ignored_indexes if index in pd_data.index]
         return pd_data.drop(to_drop_indexes)
 
+    def get_biasing_labels(self, labels):
+        biasing_labels = []
+        class_counts = self.__count_classes(labels)
+        total_labels = len(labels)
+
+        for class_label in class_counts:
+            if class_counts[class_label] > 0.50*total_labels:
+                biasing_labels.append(class_label)
+
+        return biasing_labels
+
+    def undersampling(self, dataset, labels, biasing_labels, size, seed):
+        random.seed(seed) # seed the random
+        observation_label_pair_list = list(zip(dataset, labels)) # associate dataset rows with labels.
+
+        sampling_list = dict.fromkeys(biasing_labels, []) #create a dictionary for each biasing_label.
+        non_sampling_list = []
+
+        for observation_label_pair in observation_label_pair_list:
+            if observation_label_pair[1] in biasing_labels: # if this label is in biasing_labels
+                sampling_list[observation_label_pair[1]].append(observation_label_pair) #add to sampling list
+            else:
+                non_sampling_list.append(observation_label_pair) #add to nonsampling list
+
+        dataset, labels = zip(*non_sampling_list) #unzip back the values which will not be eliminated.
+
+        for biasing_label in sampling_list:
+            random.shuffle(sampling_list[biasing_label]) # shuffle the list
+            sampling_list_dataset, sampling_list_labels = zip(*sampling_list[biasing_label])
+            # take first size element.
+            dataset = sampling_list_dataset[:size] + dataset
+            labels = sampling_list_labels[:size] + labels
+
+        return dataset, labels
+
+    def export_confusion_matrix(self, out_file_pre_path, conf_matrix, label_names, success, fail):
+        out_file_path = out_file_pre_path + "_confusionMatrix.csv"
+        with open(out_file_path, "w") as output_file:
+            output_file.write(";")
+            for i in range(0, len(label_names)):
+                output_file.write(str(label_names[i]) + ";")
+            output_file.write("\n")
+            for row in range(0, len(conf_matrix)):
+                output_file.write(str(label_names[row]) + ";")
+                for col in range(0, len(conf_matrix[row])):
+                    output_file.write(str(conf_matrix[row][col]) + ";")
+                output_file.write("\n")
+
+            output_file.write(";")
+            for col in range(0, len(conf_matrix[0])):
+                output_file.write(";")
+            output_file.write(str(success) + ";" + str(fail) + ";")
+            output_file.write(str(success/(success+fail)) + ";\n")
+
+    def compute_sampling_confusion_matrix(self, conf_matrices, out_file_pre_path, label_names, sampled_scores):
+        print("------> Total")
+        total_labels = len(label_names)
+        total_conf_matrix = np.zeros((total_labels, total_labels), dtype=np.int32)
+        total_success = 0
+        total_fail = 0
+
+        for sampled_score in sampled_scores:
+            total_success += sampled_score[0]
+            total_fail += sampled_score[1]
+
+        for conf_matrix in conf_matrices:
+            total_conf_matrix = np.add(total_conf_matrix, conf_matrix)
+
+        print(total_success, total_fail, (total_success/(total_success+total_fail)))
+        print(total_conf_matrix)
+        self.export_confusion_matrix(out_file_pre_path, total_conf_matrix,
+                                     label_names, total_success, total_fail)

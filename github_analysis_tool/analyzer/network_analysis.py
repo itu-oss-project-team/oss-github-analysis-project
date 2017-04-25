@@ -93,44 +93,65 @@ class NetworkAnalysis:
 
         return new_data
 
-    def generate_data_frame(self, file_path, file_path_2=None):
-        data = pandas.read_csv(file_path, sep=';', index_col=0)  # read the csv file
-        if file_path_2 is not None:
-            data2 = pandas.read_csv(file_path_2, sep=';', index_col=0)
-            new_headers_2 = data2.columns.values
-            for i in range(0,len(new_headers_2)):
-                new_headers_2[i] += "_2"
-
-            data2.rename(columns=dict(zip(data2.columns, new_headers_2)), inplace=True)
-            new_data_frame = pandas.concat([data, data2], axis=1)
-            new_data_frame.dropna(inplace=True)
-            return new_data_frame
-        else:
-            return data
-
-    def do_classification(self, df, df_name, labelling_func, labelling_name):
+    def do_classification(self, df, df_name, labelling_func, labelling_name, sampling=True):
         print("----> Classifying data set \"" + df_name + "\" with  \"" + labelling_name + " \" labels.")
-
         reduced_df = df[~df.index.duplicated()]  # Remove duplicate rows
         labels, row_labels, ignored_indexes = labelling_func(df=reduced_df)
 
         reduced_df = self.__analysis_utilities.drop_rows(reduced_df, ignored_indexes)  # Remove non-labeled rows/repos
-        columns, _, feature_values = self.__analysis_utilities.decompose_df(reduced_df)
-
-        k = 10
-        k = k if (k <= len(columns)) else len(columns)  # Make sure that k is not larger than actual features
-        # TODO: Obtain selected features and report them, maybe using column names
-        # Reduce feature set by selecting best k features
-        reduced_features = SelectKBest(chi2, k=k).fit_transform(feature_values, labels)
-
-        training_set, test_set, training_labels, test_labels = \
-            self.__analysis_utilities.split_data(reduced_features, labels, row_labels)
+        columns, repos, observations = self.__analysis_utilities.decompose_df(reduced_df)
 
         out_folder_path = os.path.join(OssConstants.OUTPUT_DIR, "classification", labelling_name, df_name)
         if not os.path.exists(out_folder_path):
             os.makedirs(out_folder_path)
 
-        self.classification.classify_with_knn(out_folder_path, training_set, test_set, training_labels, test_labels)
+        k = 10
+        k = k if (k <= len(columns)) else len(columns)  # Make sure that k is not larger than actual features
+        # TODO: Obtain selected features and report them, maybe using column names
+        # Reduce observation set by selecting best k features
+        reduced_observations = SelectKBest(chi2, k=k).fit_transform(observations, labels)
+
+        training_set, test_set, training_labels, test_labels = \
+            self.__analysis_utilities.split_data(reduced_observations, labels, row_labels)
+
+        knn_k = 5
+
+        # if sampling is enabled
+        if sampling:
+
+            conf_matrices = []
+            sampled_scores = []
+            biasing_labels = self.__analysis_utilities.get_biasing_labels(training_labels)
+
+            # if there's a biasing label
+
+            if len(biasing_labels) != 0:
+                size = 10 # TODO: change this maybe?
+                out_file_pre_path = os.path.join(out_folder_path, "knn" + str(knn_k) + "_sampling")
+                label_names = np.unique(test_labels)
+
+                for i in range(0, 10):
+                    print("------> Sampling iteration: " + str(i))
+                    # retrieve reduced / sampled training set-labels.
+                    training_set, training_labels = self.__analysis_utilities.undersampling(training_set, training_labels,
+                                                                                            biasing_labels, size, seed=i)
+                    # do knn and get results.
+                    conf_matrix, score = self.classification.knn_classify(out_folder_path, training_set, test_set,
+                                                                          training_labels, test_labels, k=knn_k,
+                                                                          msg="_sampling_" + str(i))
+
+                    conf_matrices.append(conf_matrix)
+                    sampled_scores.append((score, len(test_set)-score))
+
+                #finally, export results
+                self.__analysis_utilities.compute_sampling_confusion_matrix(conf_matrices, out_file_pre_path,
+                                                                            label_names, sampled_scores)
+
+            else:  # act normal
+                self.classification.knn_classify(out_folder_path, training_set, test_set, training_labels, test_labels)
+
+        else:
+            self.classification.knn_classify(out_folder_path, training_set, test_set, training_labels, test_labels)
 
     def do_clustering(self, data_frame, df_name):
         # Try different clustering algorithms with different parameters
