@@ -5,6 +5,8 @@ import pandas as pd
 import random
 import collections
 
+from sklearn.feature_selection import SelectKBest, chi2
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from github_analysis_tool.services.database_service import DatabaseService
 from github_analysis_tool.services.db_column_constants import Columns
@@ -15,7 +17,12 @@ class AnalysisUtilities:
     def __init__(self):
         self.__database_service = DatabaseService()
 
-    def normalize_df(self, df):
+    def drop_0_std_columns(self, df, in_place=False):
+        #  Drop columns with 0 standard deviation
+        return df.drop(df.std()[(df.std() == 0)].index, axis=1, inplace=in_place)
+
+    def normalize_df(self, df_):
+        df = self.drop_0_std_columns(df_)  # This prevents divide by zero errors on 0 std columns
         return (df-df.min())/(df.max()-df.min())
 
     def decompose_df(self, df):
@@ -194,3 +201,15 @@ class AnalysisUtilities:
         print(total_conf_matrix)
         self.export_confusion_matrix(out_file_pre_path, total_conf_matrix,
                                      label_names, total_success, total_fail)
+
+    def export_best_feature_names(self, df, labels, out_folder_path, k):
+        columns, repos, observations = self.decompose_df(df)
+        feature_scores = SelectKBest(chi2, k=k).fit(observations, labels).scores_
+        feature_scores = np.nan_to_num(feature_scores)
+        k_best_features = np.argpartition(feature_scores.ravel(), (-1) * k)[(-1) * k:]
+        k_best_feature_names = columns[k_best_features]
+
+        out_file_path = os.path.join(out_folder_path, "feature_selection.txt")
+        with open(out_file_path, "w") as output_file:
+            for feature_name in k_best_feature_names:
+                output_file.write(feature_name + "\n")
