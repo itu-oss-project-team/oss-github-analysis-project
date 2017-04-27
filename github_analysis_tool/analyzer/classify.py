@@ -34,29 +34,34 @@ data_sets.append({"df": commit_df, "name": "(commitMetric)"})
 
 # Repo stats data frame
 repo_df = analysis_utilities.get_repo_stats_df()
-data_sets.append({"df": repo_df, "name": "(repoStat)"})
 
 # File + commit metrics data frame
 file_commit_df = analysis_utilities.merge_dfs_on_indexes(file_df, commit_df, "_file", "_commit")
 data_sets.append({"df": file_commit_df, "name": "(fileMetric,CommitMetric)"})
 
+# file + repo stats data frame
 file_repo_df = analysis_utilities.merge_dfs_on_indexes(file_df, repo_df, "", "")
 data_sets.append({"df": file_repo_df, "name": "(fileMetric,repoStat)"})
 
+# commit + repo stats data frame
 commit_repo_df = analysis_utilities.merge_dfs_on_indexes(commit_df, repo_df, "", "")
 data_sets.append({"df": file_repo_df, "name": "(commitMetric,repoStat)"})
 
+# all
 file_commit_repo_df = analysis_utilities.merge_dfs_on_indexes(file_commit_df, repo_df)
 data_sets.append({"df": file_commit_repo_df, "name": "(fileMetric,commitMetric,repoStat)"})
 
+configurations = list()
+configurations.append({"sampling": False, "normalize": False})
+configurations.append({"sampling": False, "normalize": True})
+configurations.append({"sampling": True, "normalize": False})
+configurations.append({"sampling": True, "normalize": True})
+
 for label_func in label_funcs:
     for data_set in data_sets:
-        network_analysis.do_classification(df=data_set["df"], df_name=data_set["name"],
-                                           labelling_func=label_func["func"], labelling_name=label_func["name"],
-                                           sampling=False)
-        if label_func["name"] == "languageLabels":
+        for conf in configurations:
             network_analysis.do_classification(df=data_set["df"], df_name=data_set["name"],
-                                               labelling_func=label_func["func"], labelling_name=label_func["name"],
-                                               sampling=True)
+                                           labelling_func=label_func["func"], labelling_name=label_func["name"],
+                                           sampling=conf["sampling"], normalize=conf["normalize"])
 
 print("--> Classification finished calculation finished")

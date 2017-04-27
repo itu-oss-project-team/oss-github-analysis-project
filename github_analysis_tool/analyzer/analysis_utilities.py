@@ -88,9 +88,9 @@ class AnalysisUtilities:
             if 1 < label_count < 10:
                 split_size = np.rint(0.50 * label_count)
             elif 10 <= label_count < 20:
-                split_size = np.rint(0.60 * label_count)
+                split_size = np.rint(0.50 * label_count)
             elif label_count >= 20:
-                split_size = np.rint(0.70 * label_count)
+                split_size = np.rint(0.60 * label_count)
             else:
                 split_size = label_count
 
@@ -122,7 +122,7 @@ class AnalysisUtilities:
         to_drop_indexes = [index for index in ignored_indexes if index in pd_data.index]
         return pd_data.drop(to_drop_indexes)
 
-    def get_biasing_labels(self, labels):
+    def get_biasing_labels(self, labels, threshold = 0.50):
         biasing_labels = []
         class_counts = self.__count_classes(labels)
         total_labels = len(labels)
@@ -134,6 +134,9 @@ class AnalysisUtilities:
         return biasing_labels
 
     def undersampling(self, dataset, labels, biasing_labels, size, seed):
+        if len(biasing_labels) == 0:
+            return dataset, labels
+
         random.seed(seed) # seed the random
         observation_label_pair_list = list(zip(dataset, labels)) # associate dataset rows with labels.
 

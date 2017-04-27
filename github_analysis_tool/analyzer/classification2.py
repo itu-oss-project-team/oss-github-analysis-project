@@ -3,6 +3,7 @@ import numpy as np
 import os.path
 from sklearn import neighbors
 from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.linear_model import SGDClassifier
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -150,6 +151,7 @@ class Classification:
         return conf_matrix
 
     def knn_classify(self, out_folder_path, training_set, test_set, training_labels, test_labels, k=3, msg=""):
+        print("message: " + msg)
         out_file_pre_path = os.path.join(out_folder_path, "knn" + str(k) + msg)  # Any output file should extend this path
 
         knn_classifier = neighbors.KNeighborsClassifier(k, weights='distance')
