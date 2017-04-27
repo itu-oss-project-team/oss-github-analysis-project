@@ -102,7 +102,7 @@ class NetworkAnalysis:
 
         print("----> Classifying data set \"" + df_name + "\" with  \"" + labelling_name + " \" labels.")
 
-        reduced_df = df[~df.index.duplicated()]  # Remove duplicate rows
+        reduced_df = df[~df.index.duplicated(keep="Last")]  # Remove duplicate rows
         labels, row_labels, ignored_indexes = labelling_func(df=reduced_df)
 
         reduced_df = self.__analysis_utilities.drop_rows(reduced_df, ignored_indexes)  # Remove non-labeled rows/repos
@@ -118,8 +118,9 @@ class NetworkAnalysis:
 
         k = 10
         k = k if (k <= len(columns)) else len(columns)  # Make sure that k is not larger than actual features
-        # TODO: Obtain selected features and report them, maybe using column names
-        # Reduce observation set by selecting best k features
+        # TODO: We are analyzing features twice, better to da that at once
+        # Write the names of k best features to a file
+        self.__analysis_utilities.export_best_feature_names(reduced_df, labels, out_folder_path, k)
         reduced_observations = SelectKBest(chi2, k=k).fit_transform(observations, labels)
 
         ''' Preprocessing is Done, now do classification! '''
