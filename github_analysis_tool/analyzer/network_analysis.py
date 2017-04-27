@@ -143,22 +143,14 @@ class NetworkAnalysis:
 
                 print("------> iteration: " + str(i))
                 # retrieve reduced / sampled training set-labels.
-                training_set_sampled, training_labels_sampled = self.__analysis_utilities.undersampling(training_set, training_labels,
+                training_set, training_labels = self.__analysis_utilities.undersampling(training_set, training_labels,
                                                                                                 biasing_labels, size, seed=i)
-                # do knn and get results.
-                conf_matrix, score = self.classification.knn_classify(out_folder_path, training_set_sampled, test_set,
-                                                                      training_labels_sampled, test_labels, k=knn_k,
-                                                                              msg=msg+"_"+str(i))
 
-                conf_matrices.append(conf_matrix)
-                sampled_scores.append((score, len(test_set)-score))
-
-            else:  # act normal
-                conf_matrix, score = self.classification.knn_classify(out_folder_path, training_set, test_set,
-                                                                      training_labels, test_labels, k=knn_k,
-                                                                      msg=msg+"_"+str(i))
-                conf_matrices.append(conf_matrix)
-                sampled_scores.append((score, len(test_set)-score))
+            conf_matrix, score = self.classification.knn_classify(out_folder_path, training_set, test_set,
+                                                                  training_labels, test_labels, k=knn_k,
+                                                                  msg=msg+"_"+str(i))
+            conf_matrices.append(conf_matrix)
+            sampled_scores.append((score, len(test_set)-score))
 
         # finally, export results
         self.__analysis_utilities.compute_sampling_confusion_matrix(conf_matrices, out_file_pre_path,
