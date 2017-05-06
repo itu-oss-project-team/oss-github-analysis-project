@@ -135,7 +135,7 @@ class AnalysisUtilities:
         total_labels = len(labels)
 
         for class_label in class_counts:
-            if class_counts[class_label] > 0.50*total_labels:
+            if class_counts[class_label] > threshold*total_labels:
                 biasing_labels.append(class_label)
 
         return biasing_labels
@@ -156,7 +156,11 @@ class AnalysisUtilities:
             else:
                 non_sampling_list.append(observation_label_pair) #add to nonsampling list
 
-        dataset, labels = zip(*non_sampling_list) #unzip back the values which will not be eliminated.
+        if len(non_sampling_list) != 0:
+            dataset, labels = zip(*non_sampling_list) #unzip back the values which will not be eliminated.
+        else:
+            dataset = ()
+            labels = ()
 
         for biasing_label in sampling_list:
             random.shuffle(sampling_list[biasing_label]) # shuffle the list
@@ -173,6 +177,7 @@ class AnalysisUtilities:
             output_file.write(";")
             for i in range(0, len(label_names)):
                 output_file.write(str(label_names[i]) + ";")
+            output_file.write("Correct;Misccorect;Ratio")
             output_file.write("\n")
             for row in range(0, len(conf_matrix)):
                 output_file.write(str(label_names[row]) + ";")
@@ -180,13 +185,13 @@ class AnalysisUtilities:
                     output_file.write(str(conf_matrix[row][col]) + ";")
                 output_file.write("\n")
 
-            output_file.write(";")
+            output_file.write("Total;")
             for col in range(0, len(conf_matrix[0])):
                 output_file.write(";")
             output_file.write(str(success) + ";" + str(fail) + ";")
-            output_file.write(str(success/(success+fail)) + ";\n")
+            output_file.write(str(success/(success+fail)))
 
-    def compute_sampling_confusion_matrix(self, conf_matrices, out_file_pre_path, label_names, sampled_scores):
+    def compute_total_confusion_matrix(self, conf_matrices, out_file_pre_path, label_names, sampled_scores):
         print("------> Total")
         total_labels = len(label_names)
         total_conf_matrix = np.zeros((total_labels, total_labels), dtype=np.int32)
@@ -200,10 +205,12 @@ class AnalysisUtilities:
         for conf_matrix in conf_matrices:
             total_conf_matrix = np.add(total_conf_matrix, conf_matrix)
 
-        print(total_success, total_fail, (total_success/(total_success+total_fail)))
-        print(total_conf_matrix)
+        accuracy = total_success/(total_success+total_fail)
+        print(total_success, total_fail, accuracy)
         self.export_confusion_matrix(out_file_pre_path, total_conf_matrix,
                                      label_names, total_success, total_fail)
+
+        return (total_success, total_fail, accuracy)
 
     def export_best_feature_names(self, df, labels, out_folder_path, k):
         columns, repos, observations = self.decompose_df(df)
@@ -216,3 +223,36 @@ class AnalysisUtilities:
         with open(out_file_path, "w") as output_file:
             for feature_name in k_best_feature_names:
                 output_file.write(feature_name + "\n")
+
+    def find_sampling_size(self, biasing_labels, labels):
+        """find the biggest class size after removing biasing labels."""
+
+        labels_except_biasing_labels = [x for x in labels if x not in biasing_labels]
+        label_names, label_counts = np.unique(labels_except_biasing_labels, return_counts=True)
+        if len(label_counts) == 0:
+            size = 40
+        else:
+            size = np.max(label_counts)
+        return size
+
+
+    def export_report(self, score, out_folder_path, name_of_classification):
+        report_file_path = os.path.join(out_folder_path, "result_report.csv")
+
+        # Dictionary for a score (Correct, Miscorrect, Ratio)
+        data = {
+            "Correct": score[0],
+            "Miscorrect": score[1],
+            "Ratio": score[2]
+        }
+
+        if os.path.exists(report_file_path): # if file has been created earlier
+            df = pd.read_csv(report_file_path, sep=";", index_col=0)
+            df = df[~df.index.duplicated(keep="last")]  # Remove duplicate rows
+            new_df = pd.DataFrame(data=data, index=[name_of_classification])  # create new row
+            df = df.append(new_df) # append it
+        else:
+            df = pd.DataFrame(data=data, index=[name_of_classification])
+
+        df.sort_values(["Ratio"], axis=0, ascending=False, inplace=True)  # sort before exporting
+        df.to_csv(report_file_path, sep=";")

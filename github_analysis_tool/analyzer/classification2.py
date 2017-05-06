@@ -3,7 +3,7 @@ import numpy as np
 import os.path
 from sklearn import neighbors
 from sklearn.metrics import confusion_matrix, accuracy_score
-from sklearn.linear_model import SGDClassifier
+from sklearn.model_selection import *
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -145,12 +145,12 @@ class Classification:
 
         conf_matrix = confusion_matrix(labels, predicted, label_names)
 
-        self.__analysis_utilities.export_confusion_matrix(out_file_pre_path, conf_matrix,
-                                                          label_names, success, fail)
+        #self.__analysis_utilities.export_confusion_matrix(out_file_pre_path, conf_matrix,
+                                                          #label_names, success, fail)
 
         return conf_matrix
 
-    def knn_classify(self, out_folder_path, training_set, test_set, training_labels, test_labels, k=3, msg=""):
+    def knn_classify(self, out_folder_path, training_set, test_set, training_labels, test_labels, k=1, msg=""):
         print("message: " + msg)
         out_file_pre_path = os.path.join(out_folder_path, "knn" + str(k) + msg)  # Any output file should extend this path
 
@@ -161,4 +161,14 @@ class Classification:
         success = accuracy_score(test_labels, predicted, normalize=False)
         conf_matrix = self.__retrieve_confusion_matrix(test_labels, predicted, out_file_pre_path)
         return conf_matrix, success
+
+    def classify(self, classifier, clsf_name, out_folder_path, observations, labels, msg=""):
+        print(clsf_name + " : " + msg)
+        out_file_pre_path = os.path.join(out_folder_path, clsf_name + msg)  # Any output file should extend this path
+
+        predicted = cross_val_predict(classifier, observations, labels, cv=StratifiedKFold(n_splits=3))
+        success = accuracy_score(labels, predicted, normalize=False)
+        conf_matrix = self.__retrieve_confusion_matrix(labels, predicted, out_file_pre_path)
+        return conf_matrix, success
+
 

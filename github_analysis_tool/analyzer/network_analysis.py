@@ -2,7 +2,7 @@ import collections
 import numpy as np
 import os.path
 from sklearn.feature_selection import *
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import *
 from scipy.stats import linregress
 import sys
 
@@ -93,15 +93,7 @@ class NetworkAnalysis:
 
         return new_data
 
-    def do_classification(self, df, df_name, labelling_func, labelling_name, sampling=True, normalize=False):
-        msg = ""  # this string will be passed as message to file construct file name
-        if normalize:
-            msg += "_normalized"
-        if sampling:
-            msg += "_sampling"
-
-        print("----> Classifying data set \"" + df_name + "\" with  \"" + labelling_name + " \" labels.")
-
+    def __decompose_and_preprocess(self, df, labelling_func, out_folder_path, normalize):
         reduced_df = df[~df.index.duplicated(keep="Last")]  # Remove duplicate rows
         labels, row_labels, ignored_indexes = labelling_func(df=reduced_df)
 
@@ -112,10 +104,6 @@ class NetworkAnalysis:
 
         columns, repos, observations = self.__analysis_utilities.decompose_df(reduced_df)
 
-        out_folder_path = os.path.join(OssConstants.OUTPUT_DIR, "classification", labelling_name, df_name)
-        if not os.path.exists(out_folder_path):
-            os.makedirs(out_folder_path)
-
         k = 10
         k = k if (k <= len(columns)) else len(columns)  # Make sure that k is not larger than actual features
         # TODO: We are analyzing features twice, better to da that at once
@@ -123,47 +111,57 @@ class NetworkAnalysis:
         self.__analysis_utilities.export_best_feature_names(reduced_df, labels, out_folder_path, k)
         reduced_observations = SelectKBest(chi2, k=k).fit_transform(observations, labels)
 
+        return reduced_observations, labels, row_labels
+
+    def do_classification(self, classifiers, df, df_name, labelling_func, labelling_name, sampling, normalize):
+
+        print("----> Classifying data set \"" + df_name + "\" with  \"" + labelling_name + " \" labels.")
+        msg = ""  # this string will be passed as message to file construct file name
+        if normalize:
+            msg += "_normalized"
+        if sampling:
+            msg += "_sampling"
+
+        out_folder_path = os.path.join(OssConstants.OUTPUT_DIR, "classification", labelling_name, df_name)
+        if not os.path.exists(out_folder_path):
+            os.makedirs(out_folder_path)
+
+        observations, labels, row_labels = \
+            self.__decompose_and_preprocess(df, labelling_func, out_folder_path, normalize)
+
         ''' Preprocessing is Done, now do classification! '''
 
-        knn_k = 5
-        out_file_pre_path = os.path.join(out_folder_path, "knn" + str(knn_k) + msg)
-        conf_matrices = []
-        sampled_scores = []
+        for classifier in classifiers:
+            conf_matrices = []
+            scores = []
 
-        for i in range(0, 10):
-            training_set, test_set, training_labels, test_labels = \
-                self.__analysis_utilities.split_data(reduced_observations, labels, row_labels)
+            for i in range(0, 10):
+                '''
+                training_set, test_set, training_labels, test_labels = \
+                    self.__analysis_utilities.split_data(observations, labels, row_labels)
+                '''
+                label_names = np.unique(labels)
+                if sampling:
+                    biasing_labels = self.__analysis_utilities.get_biasing_labels(labels, 0.40)
+                    size = self.__analysis_utilities.find_sampling_size(biasing_labels, labels)
 
-            label_names = np.unique(test_labels)
+                    print("------> iteration: " + str(i))
+                    # retrieve reduced / sampled training set-labels.
+                    observations, labels = self.__analysis_utilities.undersampling(observations, labels,
+                                                                                   biasing_labels, size, seed=i)
 
-            # if sampling is enabled
-            if sampling:
-                biasing_labels = self.__analysis_utilities.get_biasing_labels(training_labels, 0.40)
-                size = 10  # TODO: change this maybe?
-
-                print("------> iteration: " + str(i))
-                # retrieve reduced / sampled training set-labels.
-                training_set_sampled, training_labels_sampled = self.__analysis_utilities.undersampling(training_set, training_labels,
-                                                                                                biasing_labels, size, seed=i)
                 # do knn and get results.
-                conf_matrix, score = self.classification.knn_classify(out_folder_path, training_set_sampled, test_set,
-                                                                      training_labels_sampled, test_labels, k=knn_k,
-                                                                              msg=msg+"_"+str(i))
-
+                conf_matrix, score = self.classification.classify(classifier["func"], classifier["name"], out_folder_path, observations, labels, msg=msg+"_"+str(i))
                 conf_matrices.append(conf_matrix)
-                sampled_scores.append((score, len(test_set)-score))
+                scores.append((score, len(observations)-score))
 
-            else:  # act normal
-                conf_matrix, score = self.classification.knn_classify(out_folder_path, training_set, test_set,
-                                                                      training_labels, test_labels, k=knn_k,
-                                                                      msg=msg+"_"+str(i))
-                conf_matrices.append(conf_matrix)
-                sampled_scores.append((score, len(test_set)-score))
+            # export results
+            out_file_pre_path = os.path.join(out_folder_path, classifier["name"] + msg)
+            total_score = self.__analysis_utilities.compute_total_confusion_matrix(conf_matrices, out_file_pre_path,
+                                                                     label_names, scores)
 
-        # finally, export results
-        self.__analysis_utilities.compute_sampling_confusion_matrix(conf_matrices, out_file_pre_path,
-                                                                    label_names, sampled_scores)
-
+            # add it to Reports csv.
+            self.__analysis_utilities.export_report(total_score, out_folder_path, classifier["name"]+msg)
 
     def do_clustering(self, data_frame, df_name):
         # Try different clustering algorithms with different parameters
