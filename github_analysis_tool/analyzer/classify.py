@@ -35,8 +35,8 @@ class Classify:
                             "name": "languageLabels"})
         label_funcs.append({"func": self.classification.set_two_class_language_labels,
                             "name": "twoClassLanguageLabels"})
-        # label_funcs.append({"func": classification.set_star_labels,
-                            # "name": "starLabels"})
+        label_funcs.append({"func": self.classification.set_star_labels,
+                            "name": "starLabels"})
         return label_funcs
 
     def __create_data_sets(self):
@@ -76,6 +76,8 @@ class Classify:
                             "name": "sgd"})
         classifiers.append({"func": neighbors.KNeighborsClassifier(1, weights='distance'),
                             "name": "knn1"})
+        classifiers.append({"func": neighbors.KNeighborsClassifier(3, weights='distance'),
+                            "name": "knn3"})
         classifiers.append({"func": GaussianNB(),
                             "name": "naive_bayes"})
 
@@ -91,11 +93,6 @@ class Classify:
         configurations.append({"sampling": True, "normalize": False})
         configurations.append({"sampling": True, "normalize": True})
         return configurations
-
-    def classify_one_selection(self, classifiers, label_func, data_set, conf):
-        self.network_analysis.do_classification(classifiers, data_set["df"], data_set["name"],
-                                                label_func["func"], label_func["name"],
-                                                conf["sampling"], conf["normalize"])
 
     def start_classifying(self):
         print("--> Classification started")

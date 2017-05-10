@@ -241,7 +241,6 @@ class Classification:
 
         self.__export_confusion_matrix(test_labels, predicted, output_path)
 
-
     def svc(self, data, message, set_labels):
         data, labels, repo_class_pair = set_labels(data)
         headers, repos, observations = self.__fetch_data(data)
