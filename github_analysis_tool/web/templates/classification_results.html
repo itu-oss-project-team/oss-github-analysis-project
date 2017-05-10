@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Classification Results</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{url_for('static', filename='./css/style.css')}}">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+    <script>
+        function populateDataSets() {
+            var datasets = {{datasets | tojson}};
+            var label = document.getElementById("label-menu").value;
+            document.getElementById("dataset-menu").innerHTML = "";
+            for (var dataset_folder in datasets[label]) {
+                var opt = document.createElement("option");
+                opt.textContent = dataset_folder;
+                opt.value = dataset_folder;
+                document.getElementById("dataset-menu").appendChild(opt)
+            }
+        }
+
+        function populateFileList(){
+            var datasets = {{datasets | tojson}};
+            var label = document.getElementById("label-menu").value;
+            var dataset_folder = document.getElementById("dataset-menu").value;
+            document.getElementById("file-menu").innerHTML = "";
+            for (var file in datasets[label][dataset_folder]){
+                var opt = document.createElement("option");
+                opt.textContent = datasets[label][dataset_folder][file];
+                opt.value = datasets[label][dataset_folder][file];
+                document.getElementById("file-menu").appendChild(opt);
+            }
+        }
+
+        $( document ).ready(function() {
+            populateDataSets();
+            populateFileList();
+        });
+    </script>
+</head>
+<body>
+<br/>
+<form class="form-inline pull-left" role="form" action="{{url_for('clsf_results')}}" method="POST">
+<div class="form-group">
+    <select name="label-menu" id="label-menu" onchange="populateDataSets()">
+        {% for label in label_folders %}
+        <option value="{{label}}">{{label}}</option>
+        {% endfor %}
+    </select>
+    <select name="dataset-menu" id="dataset-menu" onchange="populateFileList()">
+
+    </select>
+    <select name="file-menu" id="file-menu">
+
+    </select>
+    <button type = "submit"> GO! </button>
+</div>
+</form>
+<br/>
+<br/>
+{% if df is not none %}
+<h3 style="text-align: center">{{message}}</h3>
+<br/>
+<table id="results-table" class="table table-hover table-bordered table-striped table-sm">
+    <thead class="thead-inverse">
+        <tr>
+            <th></th>
+        {% for headers in df.columns.values %}
+            <th>{{headers}}</th>
+        {% endfor %}
+        </tr>
+    </thead>
+    {% for i in range(0, df.index.values|length) %}
+    <tbody>
+        <tr>
+           <th scope="row">{{df.index.values[i]}}</b></th>
+            {% for j in range(0, df._get_values[i]|length) %}
+                {% if i == j %}
+                    <td><b>{{df._get_values[i][j]}}</b></td>
+                {% else %}
+                    <td>{{df._get_values[i][j]}}</td>
+                {% endif %}
+            {% endfor %}
+            {% endfor %}
+        </tr>
+    </tbody>
+</table>
+{% endif %}
+</body>
+</html>
