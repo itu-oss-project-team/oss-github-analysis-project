@@ -181,8 +181,17 @@ class AnalysisUtilities:
             output_file.write("\n")
             for row in range(0, len(conf_matrix)):
                 output_file.write(str(label_names[row]) + ";")
+                false_guess = 0
+                true_guess = 0
                 for col in range(0, len(conf_matrix[row])):
+                    if row == col:
+                        true_guess += conf_matrix[row][col]
+                    else:
+                        false_guess += conf_matrix[row][col]
                     output_file.write(str(conf_matrix[row][col]) + ";")
+                output_file.write(str(true_guess) + ";")
+                output_file.write(str(false_guess) + ";")
+                output_file.write(str(true_guess/(true_guess + false_guess)))
                 output_file.write("\n")
 
             output_file.write("Total;")
