@@ -2,7 +2,6 @@ import collections
 import numpy as np
 import os.path
 from sklearn.feature_selection import *
-from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import *
 from scipy.stats import linregress
 import sys
@@ -105,7 +104,7 @@ class NetworkAnalysis:
 
         columns, repos, observations = self.__analysis_utilities.decompose_df(reduced_df)
 
-        k = 10
+        k = 30
         k = k if (k <= len(columns)) else len(columns)  # Make sure that k is not larger than actual features
         # TODO: We are analyzing features twice, better to da that at once
         # Write the names of k best features to a file
