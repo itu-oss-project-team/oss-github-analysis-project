@@ -35,8 +35,6 @@ class Classify:
                             "name": "languageLabels"})
         label_funcs.append({"func": self.classification.set_two_class_language_labels,
                             "name": "twoClassLanguageLabels"})
-        label_funcs.append({"func": self.classification.set_star_labels,
-                            "name": "starLabels"})
         return label_funcs
 
     def __create_data_sets(self):
