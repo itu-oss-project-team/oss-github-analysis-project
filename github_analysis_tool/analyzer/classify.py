@@ -78,6 +78,8 @@ class Classify:
                             "name": "knn1"})
         classifiers.append({"func": neighbors.KNeighborsClassifier(3, weights='distance'),
                             "name": "knn3"})
+        classifiers.append({"func": neighbors.KNeighborsClassifier(5, weights='distance'),
+                            "name": "knn5"})
         classifiers.append({"func": GaussianNB(),
                             "name": "naive_bayes"})
 

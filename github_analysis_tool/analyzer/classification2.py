@@ -162,13 +162,14 @@ class Classification:
         conf_matrix = self.__retrieve_confusion_matrix(test_labels, predicted, out_file_pre_path)
         return conf_matrix, success
 
-    def classify(self, classifier, clsf_name, out_folder_path, observations, labels, msg=""):
+    def classify(self, classifier, clsf_name, out_folder_path, training_set, training_labels, test_set, test_labels, msg=""):
         print(clsf_name + " : " + msg)
         out_file_pre_path = os.path.join(out_folder_path, clsf_name + msg)  # Any output file should extend this path
 
-        predicted = cross_val_predict(classifier, observations, labels, cv=StratifiedKFold(n_splits=3))
-        success = accuracy_score(labels, predicted, normalize=False)
-        conf_matrix = self.__retrieve_confusion_matrix(labels, predicted, out_file_pre_path)
+        classifier.fit(training_set, training_labels)
+        predicted = classifier.predict(test_set)
+        success = accuracy_score(test_labels, predicted, normalize=False)
+        conf_matrix = self.__retrieve_confusion_matrix(test_labels, predicted, out_file_pre_path)
         return conf_matrix, success
 
 

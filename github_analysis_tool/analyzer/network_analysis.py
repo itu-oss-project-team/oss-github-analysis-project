@@ -2,6 +2,7 @@ import collections
 import numpy as np
 import os.path
 from sklearn.feature_selection import *
+from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import *
 from scipy.stats import linregress
 import sys
@@ -136,24 +137,38 @@ class NetworkAnalysis:
             scores = []
 
             for i in range(0, 10):
-                '''
-                training_set, test_set, training_labels, test_labels = \
-                    self.__analysis_utilities.split_data(observations, labels, row_labels)
-                '''
+                print("------> iteration: " + str(i))
                 label_names = np.unique(labels)
-                if sampling:
-                    biasing_labels = self.__analysis_utilities.get_biasing_labels(labels, 0.40)
-                    size = self.__analysis_utilities.find_sampling_size(biasing_labels, labels)
 
-                    print("------> iteration: " + str(i))
-                    # retrieve reduced / sampled training set-labels.
-                    observations, labels = self.__analysis_utilities.undersampling(observations, labels,
-                                                                                   biasing_labels, size, seed=i)
+                scores_of_iter = []
+                conf_matrices_of_iter = []
 
-                # do knn and get results.
-                conf_matrix, score = self.classification.classify(classifier["func"], classifier["name"], out_folder_path, observations, labels, msg=msg+"_"+str(i))
-                conf_matrices.append(conf_matrix)
-                scores.append((score, len(observations)-score))
+                for train_index, test_index in StratifiedKFold(n_splits=3, shuffle=False).split(observations, labels):
+                    training_set, training_labels = np.array(observations)[train_index], np.array(labels)[train_index]
+                    test_set, test_labels = np.array(observations)[test_index], np.array(labels)[test_index]
+
+                    if sampling:
+                        biasing_labels = self.__analysis_utilities.get_biasing_labels(training_labels, 0.40)
+                        size = self.__analysis_utilities.find_sampling_size(biasing_labels, training_labels)
+
+                        # retrieve reduced / sampled training set-labels.
+                        training_set, training_labels = self.__analysis_utilities.undersampling(training_set,
+                                                                                        training_labels, biasing_labels,
+                                                                                        size, seed=i)
+
+                    # do classification and get results.
+                    conf_matrix, score = self.classification.classify(classifier["func"], classifier["name"], out_folder_path,
+                                                                  training_set, training_labels, test_set, test_labels,
+                                                                  msg=msg+"_"+str(i))
+
+                    scores_of_iter.append((score, len(test_set)-score))
+                    conf_matrices_of_iter.append(conf_matrix)
+
+                ''' 3-Fold CV is done. '''
+
+                result_conf_matrix_of_iter = self.__analysis_utilities.sum_matrices(conf_matrices_of_iter)
+                conf_matrices.append(result_conf_matrix_of_iter)
+                scores.append(tuple(map(sum, zip(*scores_of_iter))))
 
             # export results
             out_file_pre_path = os.path.join(out_folder_path, classifier["name"] + msg)

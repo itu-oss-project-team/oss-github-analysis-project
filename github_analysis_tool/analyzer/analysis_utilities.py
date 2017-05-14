@@ -191,10 +191,19 @@ class AnalysisUtilities:
             output_file.write(str(success) + ";" + str(fail) + ";")
             output_file.write(str(success/(success+fail)))
 
+    def sum_matrices(self, matrices_list):
+        if not matrices_list:
+            return []
+
+        row, col = matrices_list[0].shape
+        total_conf_matrix = np.zeros((row, col), dtype=np.int32)
+        for conf_matrix in matrices_list:
+            total_conf_matrix = np.add(total_conf_matrix, conf_matrix)
+
+        return total_conf_matrix
+
     def compute_total_confusion_matrix(self, conf_matrices, out_file_pre_path, label_names, sampled_scores):
         print("------> Total")
-        total_labels = len(label_names)
-        total_conf_matrix = np.zeros((total_labels, total_labels), dtype=np.int32)
         total_success = 0
         total_fail = 0
 
@@ -202,15 +211,14 @@ class AnalysisUtilities:
             total_success += sampled_score[0]
             total_fail += sampled_score[1]
 
-        for conf_matrix in conf_matrices:
-            total_conf_matrix = np.add(total_conf_matrix, conf_matrix)
+        total_conf_matrix = self.sum_matrices(conf_matrices)
 
         accuracy = total_success/(total_success+total_fail)
         print(total_success, total_fail, accuracy)
         self.export_confusion_matrix(out_file_pre_path, total_conf_matrix,
                                      label_names, total_success, total_fail)
 
-        return (total_success, total_fail, accuracy)
+        return total_success, total_fail, accuracy
 
     def export_best_feature_names(self, df, labels, out_folder_path, k):
         columns, repos, observations = self.decompose_df(df)
@@ -230,7 +238,8 @@ class AnalysisUtilities:
         labels_except_biasing_labels = [x for x in labels if x not in biasing_labels]
         label_names, label_counts = np.unique(labels_except_biasing_labels, return_counts=True)
         if len(label_counts) == 0:
-            size = 40
+            _, biasing_label_counts = np.unique(biasing_labels, return_counts=True)
+            size = np.max(biasing_label_counts)
         else:
             size = np.max(label_counts)
         return size
