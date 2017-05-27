@@ -248,7 +248,7 @@ class AnalysisUtilities:
         label_names, label_counts = np.unique(labels_except_biasing_labels, return_counts=True)
         if len(label_counts) == 0:
             _, label_counts = np.unique(labels, return_counts=True)
-            size = int(np.max(label_counts)/2)
+            size = int(np.min(label_counts))
         else:
             size = np.max(label_counts)
         return size
