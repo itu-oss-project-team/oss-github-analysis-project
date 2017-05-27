@@ -9,7 +9,7 @@ from sklearn.neural_network import MLPClassifier
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from github_analysis_tool.analyzer.analysis_utilities import AnalysisUtilities
-from github_analysis_tool.analyzer.classification2 import Classification
+from github_analysis_tool.analyzer.classification import Classification
 from github_analysis_tool.analyzer.network_analysis import NetworkAnalysis
 from github_analysis_tool import OssConstants
 

@@ -8,7 +8,7 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from github_analysis_tool.analyzer.clustering import Clustering
-from github_analysis_tool.analyzer.classification2 import Classification
+from github_analysis_tool.analyzer.classification import Classification
 from github_analysis_tool.services.database_service import DatabaseService
 from github_analysis_tool.analyzer.analysis_utilities import AnalysisUtilities
 from github_analysis_tool import OssConstants
