@@ -163,7 +163,7 @@ class AnalysisUtilities:
             labels = ()
 
         for biasing_label in sampling_list:
-            random.shuffle(sampling_list[biasing_label]) # shuffle the list
+            random.shuffle(sampling_list[biasing_label])  # shuffle the list
             sampling_list_dataset, sampling_list_labels = zip(*sampling_list[biasing_label])
             # take first size element.
             dataset = sampling_list_dataset[:size] + dataset

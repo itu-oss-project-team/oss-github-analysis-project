@@ -73,8 +73,7 @@ class Classification:
             language = self.__database_service.get_language_by_repo_full_name(repo)
 
             if language == "JavaScript" or language == "TypeScript" or language == "CoffeeScript" \
-                    or language == "HTML" or language == "CSS" or language == "PHP" \
-                    or language == "Jupyter Notebook":
+                    or language == "HTML" or language == "CSS" or language == "PHP":
                 label = "Web"
             else:
                 label = "Non-Web"

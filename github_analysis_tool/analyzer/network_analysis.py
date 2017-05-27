@@ -104,8 +104,7 @@ class NetworkAnalysis:
 
         columns, repos, observations = self.__analysis_utilities.decompose_df(reduced_df)
 
-        k = 30
-        k = k if (k <= len(columns)) else len(columns)  # Make sure that k is not larger than actual features
+        k = np.math.floor(len(columns) / 3)  # relatively determine number of features to keep
         # TODO: We are analyzing features twice, better to da that at once
         # Write the names of k best features to a file
         self.__analysis_utilities.export_best_feature_names(reduced_df, labels, out_folder_path, k)
