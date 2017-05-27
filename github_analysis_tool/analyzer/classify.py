@@ -59,7 +59,7 @@ class Classify:
                           "name": "fileMetric,repoStat"})
         # commit + repo stats data frame
         commit_repo_df = self.analysis_utilities.merge_dfs_on_indexes(commit_df, repo_df, "", "")
-        data_sets.append({"df": file_repo_df,
+        data_sets.append({"df": commit_repo_df,
                           "name": "commitMetric,repoStat"})
         # all
         file_commit_repo_df = self.analysis_utilities.merge_dfs_on_indexes(file_commit_df, repo_df)
